@@ -119,7 +119,7 @@ export default function AdminLayout() {
       <header className="lg:hidden sticky top-0 z-50 bg-card border-b shadow-sm">
         <div className="flex items-center justify-between h-14 px-4">
           <Logo size="sm" variant="full" />
-          <Button variant="ghost" size="icon-sm" onClick={handleSignOut}>
+          <Button variant="ghost" size="icon" onClick={handleSignOut}>
             <LogOut className="h-5 w-5" />
           </Button>
         </div>

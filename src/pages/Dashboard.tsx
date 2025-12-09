@@ -172,8 +172,9 @@ export default function Dashboard() {
 
             {/* Sync Button */}
             <Button 
-              variant="outline-light" 
-              size="icon-sm"
+              variant="ghost" 
+              size="icon"
+              className="text-primary-foreground hover:bg-white/20"
               onClick={handleSync}
               disabled={syncing}
             >
@@ -181,7 +182,7 @@ export default function Dashboard() {
             </Button>
 
             {/* Sign Out */}
-            <Button variant="outline-light" size="icon-sm" onClick={handleSignOut}>
+            <Button variant="ghost" size="icon" className="text-primary-foreground hover:bg-white/20" onClick={handleSignOut}>
               <LogOut className="h-4 w-4" />
             </Button>
           </div>

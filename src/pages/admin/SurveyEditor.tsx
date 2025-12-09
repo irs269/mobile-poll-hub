@@ -227,7 +227,7 @@ export default function SurveyEditor() {
             <Eye className="h-4 w-4 mr-2" />
             Prévisualiser
           </Button>
-          <Button variant="gradient" onClick={handleSave} disabled={saving}>
+          <Button variant="default" className="gradient-primary" onClick={handleSave} disabled={saving}>
             <Save className="h-4 w-4 mr-2" />
             {saving ? "Enregistrement..." : "Enregistrer"}
           </Button>
@@ -313,7 +313,7 @@ export default function SurveyEditor() {
                       {question.options.length > 1 && (
                         <Button
                           variant="ghost"
-                          size="icon-sm"
+                          size="icon"
                           onClick={() => handleDeleteOption(index, optIndex)}
                         >
                           <Trash2 className="h-3 w-3" />

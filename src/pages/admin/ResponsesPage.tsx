@@ -78,8 +78,8 @@ export default function ResponsesPage() {
         responses: r.responses as Record<string, unknown>,
         gps_start: r.gps_start as { latitude: number; longitude: number } | null,
         gps_end: r.gps_end as { latitude: number; longitude: number } | null,
-        survey: r.survey as { title: string },
-        surveyor: r.surveyor as { email: string; first_name: string | null; last_name: string | null } | null,
+        survey: r.survey as unknown as { title: string },
+        surveyor: r.surveyor as unknown as { email: string; first_name: string | null; last_name: string | null } | null,
       }));
 
       setResponses(typedResponses);
