@@ -180,7 +180,7 @@ export default function SurveysPage() {
           <h1 className="text-2xl lg:text-3xl font-bold">Sondages</h1>
           <p className="text-muted-foreground">Gérez vos questionnaires</p>
         </div>
-        <Button variant="gradient" onClick={() => setIsCreateDialogOpen(true)}>
+        <Button variant="default" className="gradient-primary" onClick={() => setIsCreateDialogOpen(true)}>
           <Plus className="h-4 w-4 mr-2" />
           Nouveau sondage
         </Button>
@@ -245,7 +245,7 @@ export default function SurveysPage() {
                   </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon-sm">
+                      <Button variant="ghost" size="icon">
                         <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
@@ -340,7 +340,7 @@ export default function SurveysPage() {
             <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
               Annuler
             </Button>
-            <Button variant="gradient" onClick={handleCreate} disabled={submitting}>
+            <Button variant="default" className="gradient-primary" onClick={handleCreate} disabled={submitting}>
               {submitting ? "Création..." : "Créer et éditer"}
             </Button>
           </DialogFooter>

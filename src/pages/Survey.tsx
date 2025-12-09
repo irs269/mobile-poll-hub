@@ -216,15 +216,16 @@ export default function SurveyPage() {
     await captureGps("end");
 
     try {
-      const { error } = await supabase.from("survey_responses").insert({
-        survey_id: surveyId,
+      const responseData = {
+        survey_id: surveyId!,
         surveyor_id: user?.id,
-        responses: responses,
-        gps_start: gpsStart,
-        gps_end: gpsEnd,
+        responses: JSON.parse(JSON.stringify(responses)),
+        gps_start: gpsStart ? JSON.parse(JSON.stringify(gpsStart)) : null,
+        gps_end: gpsEnd ? JSON.parse(JSON.stringify(gpsEnd)) : null,
         started_at: new Date(gpsStart?.timestamp || Date.now()).toISOString(),
         completed_at: new Date().toISOString(),
-      });
+      };
+      const { error } = await supabase.from("survey_responses").insert([responseData]);
 
       if (error) throw error;
 
@@ -402,7 +403,7 @@ export default function SurveyPage() {
       {/* Header */}
       <header className="sticky top-0 z-50 bg-card border-b shadow-sm">
         <div className="container flex items-center gap-4 h-14 px-4">
-          <Button variant="ghost" size="icon-sm" onClick={() => navigate("/dashboard")}>
+          <Button variant="ghost" size="icon" onClick={() => navigate("/dashboard")}>
             <ArrowLeft className="h-5 w-5" />
           </Button>
           <div className="flex-1 min-w-0">

@@ -257,7 +257,7 @@ export default function SurveyorsPage() {
                   </div>
                   <DropdownMenu>
                     <DropdownMenuTrigger asChild>
-                      <Button variant="ghost" size="icon-sm">
+                      <Button variant="ghost" size="icon">
                         <MoreVertical className="h-4 w-4" />
                       </Button>
                     </DropdownMenuTrigger>
@@ -308,7 +308,7 @@ export default function SurveyorsPage() {
             <Button variant="outline" onClick={() => setIsAssignDialogOpen(false)}>
               Annuler
             </Button>
-            <Button variant="gradient" onClick={handleAssign} disabled={assigning}>
+            <Button variant="default" className="gradient-primary" onClick={handleAssign} disabled={assigning}>
               {assigning ? "Assignation..." : "Assigner"}
             </Button>
           </DialogFooter>
