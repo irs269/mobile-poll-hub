@@ -9,7 +9,8 @@ import {
   Users, 
   FileBarChart, 
   LogOut,
-  ChevronLeft
+  ChevronLeft,
+  PieChart
 } from "lucide-react";
 
 export default function AdminLayout() {
@@ -51,6 +52,7 @@ export default function AdminLayout() {
     { to: "/admin/surveys", icon: ClipboardList, label: "Sondages" },
     { to: "/admin/surveyors", icon: Users, label: "Enquêteurs" },
     { to: "/admin/responses", icon: FileBarChart, label: "Réponses" },
+    { to: "/admin/reporting", icon: PieChart, label: "Reporting" },
   ];
 
   return (
