@@ -19,6 +19,7 @@ import SurveysPage from "./pages/admin/SurveysPage";
 import SurveyEditor from "./pages/admin/SurveyEditor";
 import SurveyorsPage from "./pages/admin/SurveyorsPage";
 import ResponsesPage from "./pages/admin/ResponsesPage";
+import ReportingPage from "./pages/admin/ReportingPage";
 
 const queryClient = new QueryClient();
 
@@ -45,6 +46,7 @@ const App = () => (
               <Route path="surveys/:surveyId/edit" element={<SurveyEditor />} />
               <Route path="surveyors" element={<SurveyorsPage />} />
               <Route path="responses" element={<ResponsesPage />} />
+              <Route path="reporting" element={<ReportingPage />} />
             </Route>
             
             {/* Catch-all */}
