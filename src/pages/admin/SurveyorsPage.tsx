@@ -60,9 +60,71 @@ export default function SurveyorsPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
+  const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
   const [selectedSurveyor, setSelectedSurveyor] = useState<Surveyor | null>(null);
   const [selectedSurveyId, setSelectedSurveyId] = useState("");
   const [assigning, setAssigning] = useState(false);
+  const [creating, setCreating] = useState(false);
+  const [newSurveyor, setNewSurveyor] = useState({
+    email: "",
+    password: "",
+    first_name: "",
+    last_name: "",
+  });
+
+  const handleCreateSurveyor = async () => {
+    if (!newSurveyor.email || !newSurveyor.password) {
+      toast.error("Email et mot de passe requis");
+      return;
+    }
+
+    if (newSurveyor.password.length < 6) {
+      toast.error("Le mot de passe doit contenir au moins 6 caractères");
+      return;
+    }
+
+    setCreating(true);
+    try {
+      // Create user via Supabase Auth
+      const { data: authData, error: authError } = await supabase.auth.signUp({
+        email: newSurveyor.email,
+        password: newSurveyor.password,
+        options: {
+          data: {
+            first_name: newSurveyor.first_name,
+            last_name: newSurveyor.last_name,
+          },
+          emailRedirectTo: `${window.location.origin}/`,
+        },
+      });
+
+      if (authError) throw authError;
+
+      if (authData.user) {
+        // Assign surveyor role
+        const { error: roleError } = await supabase.from("user_roles").insert({
+          user_id: authData.user.id,
+          role: "surveyor",
+        });
+
+        if (roleError) throw roleError;
+
+        toast.success("Enquêteur créé avec succès");
+        setIsCreateDialogOpen(false);
+        setNewSurveyor({ email: "", password: "", first_name: "", last_name: "" });
+        fetchSurveyors();
+      }
+    } catch (error: any) {
+      console.error("Error creating surveyor:", error);
+      if (error.message?.includes("already registered")) {
+        toast.error("Cet email est déjà utilisé");
+      } else {
+        toast.error("Erreur lors de la création de l'enquêteur");
+      }
+    } finally {
+      setCreating(false);
+    }
+  };
 
   useEffect(() => {
     fetchSurveyors();
@@ -185,6 +247,10 @@ export default function SurveyorsPage() {
           <h1 className="text-2xl lg:text-3xl font-bold">Enquêteurs</h1>
           <p className="text-muted-foreground">Gérez votre équipe terrain</p>
         </div>
+        <Button onClick={() => setIsCreateDialogOpen(true)} className="gradient-primary">
+          <UserPlus className="h-4 w-4 mr-2" />
+          Ajouter un enquêteur
+        </Button>
       </div>
 
       {/* Search */}
@@ -310,6 +376,76 @@ export default function SurveyorsPage() {
             </Button>
             <Button variant="default" className="gradient-primary" onClick={handleAssign} disabled={assigning}>
               {assigning ? "Assignation..." : "Assigner"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Create Surveyor Dialog */}
+      <Dialog open={isCreateDialogOpen} onOpenChange={setIsCreateDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Nouvel enquêteur</DialogTitle>
+            <DialogDescription>
+              Créez un compte pour un nouvel enquêteur
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="first_name">Prénom</Label>
+                <Input
+                  id="first_name"
+                  value={newSurveyor.first_name}
+                  onChange={(e) => setNewSurveyor({ ...newSurveyor, first_name: e.target.value })}
+                  placeholder="Jean"
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="last_name">Nom</Label>
+                <Input
+                  id="last_name"
+                  value={newSurveyor.last_name}
+                  onChange={(e) => setNewSurveyor({ ...newSurveyor, last_name: e.target.value })}
+                  placeholder="Dupont"
+                  className="mt-1"
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="email">Email *</Label>
+              <Input
+                id="email"
+                type="email"
+                value={newSurveyor.email}
+                onChange={(e) => setNewSurveyor({ ...newSurveyor, email: e.target.value })}
+                placeholder="jean.dupont@example.com"
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label htmlFor="password">Mot de passe *</Label>
+              <Input
+                id="password"
+                type="password"
+                value={newSurveyor.password}
+                onChange={(e) => setNewSurveyor({ ...newSurveyor, password: e.target.value })}
+                placeholder="Minimum 6 caractères"
+                className="mt-1"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsCreateDialogOpen(false)}>
+              Annuler
+            </Button>
+            <Button 
+              className="gradient-primary" 
+              onClick={handleCreateSurveyor} 
+              disabled={creating}
+            >
+              {creating ? "Création..." : "Créer l'enquêteur"}
             </Button>
           </DialogFooter>
         </DialogContent>
