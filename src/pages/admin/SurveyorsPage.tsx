@@ -105,41 +105,48 @@ export default function SurveyorsPage() {
 
     setCreating(true);
     try {
-      // Create user via Supabase Auth
-      const { data: authData, error: authError } = await supabase.auth.signUp({
-        email: newSurveyor.email,
-        password: newSurveyor.password,
-        options: {
-          data: {
+      // Get current session for authorization
+      const { data: { session } } = await supabase.auth.getSession();
+      
+      if (!session) {
+        toast.error("Session expirée, veuillez vous reconnecter");
+        return;
+      }
+
+      // Call edge function to create surveyor
+      const response = await fetch(
+        `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/create-surveyor`,
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
+          },
+          body: JSON.stringify({
+            email: newSurveyor.email,
+            password: newSurveyor.password,
             first_name: newSurveyor.first_name,
             last_name: newSurveyor.last_name,
-          },
-          emailRedirectTo: `${window.location.origin}/`,
-        },
-      });
+          }),
+        }
+      );
 
-      if (authError) throw authError;
+      const result = await response.json();
 
-      if (authData.user) {
-        // Assign surveyor role
-        const { error: roleError } = await supabase.from("user_roles").insert({
-          user_id: authData.user.id,
-          role: "surveyor",
-        });
-
-        if (roleError) throw roleError;
-
-        toast.success("Enquêteur créé avec succès");
-        setIsCreateDialogOpen(false);
-        setNewSurveyor({ email: "", password: "", first_name: "", last_name: "" });
-        fetchSurveyors();
+      if (!response.ok) {
+        throw new Error(result.error || "Erreur lors de la création");
       }
+
+      toast.success("Enquêteur créé avec succès");
+      setIsCreateDialogOpen(false);
+      setNewSurveyor({ email: "", password: "", first_name: "", last_name: "" });
+      fetchSurveyors();
     } catch (error: any) {
       console.error("Error creating surveyor:", error);
-      if (error.message?.includes("already registered")) {
+      if (error.message?.includes("already") || error.message?.includes("existe")) {
         toast.error("Cet email est déjà utilisé");
       } else {
-        toast.error("Erreur lors de la création de l'enquêteur");
+        toast.error(error.message || "Erreur lors de la création de l'enquêteur");
       }
     } finally {
       setCreating(false);
