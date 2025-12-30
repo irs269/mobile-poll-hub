@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { 
@@ -9,7 +9,9 @@ import {
   UserPlus, 
   Mail,
   MoreVertical,
-  ClipboardList
+  ClipboardList,
+  Trash2,
+  Eye
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -34,6 +36,14 @@ import {
 } from "@/components/ui/select";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from "@/components/ui/table";
 
 interface Profile {
   id: string;
@@ -42,10 +52,18 @@ interface Profile {
   last_name: string | null;
 }
 
+interface Assignment {
+  id: string;
+  survey_id: string;
+  survey_title: string;
+  assigned_at: string;
+}
+
 interface Surveyor {
   id: string;
   profile: Profile;
   assignments_count: number;
+  assignments: Assignment[];
 }
 
 interface Survey {
@@ -61,10 +79,12 @@ export default function SurveyorsPage() {
   const [searchQuery, setSearchQuery] = useState("");
   const [isAssignDialogOpen, setIsAssignDialogOpen] = useState(false);
   const [isCreateDialogOpen, setIsCreateDialogOpen] = useState(false);
+  const [isViewAssignmentsOpen, setIsViewAssignmentsOpen] = useState(false);
   const [selectedSurveyor, setSelectedSurveyor] = useState<Surveyor | null>(null);
   const [selectedSurveyId, setSelectedSurveyId] = useState("");
   const [assigning, setAssigning] = useState(false);
   const [creating, setCreating] = useState(false);
+  const [deletingAssignment, setDeletingAssignment] = useState<string | null>(null);
   const [newSurveyor, setNewSurveyor] = useState({
     email: "",
     password: "",
@@ -157,23 +177,31 @@ export default function SurveyorsPage() {
 
       if (profilesError) throw profilesError;
 
-      // Fetch assignments count per surveyor
+      // Fetch all assignments with survey info
       const { data: assignments, error: assignmentsError } = await supabase
         .from("survey_assignments")
-        .select("surveyor_id")
+        .select("id, surveyor_id, survey_id, assigned_at, surveys(title)")
         .in("surveyor_id", userIds);
 
       if (assignmentsError) throw assignmentsError;
 
-      const assignmentCounts = assignments?.reduce((acc, a) => {
-        acc[a.surveyor_id] = (acc[a.surveyor_id] || 0) + 1;
+      // Group assignments by surveyor
+      const assignmentsByUser = (assignments || []).reduce((acc, a) => {
+        if (!acc[a.surveyor_id]) acc[a.surveyor_id] = [];
+        acc[a.surveyor_id].push({
+          id: a.id,
+          survey_id: a.survey_id,
+          survey_title: (a.surveys as any)?.title || "Sans titre",
+          assigned_at: a.assigned_at,
+        });
         return acc;
-      }, {} as Record<string, number>) || {};
+      }, {} as Record<string, Assignment[]>);
 
       const surveyorsList: Surveyor[] = (profiles || []).map((p) => ({
         id: p.id,
         profile: p,
-        assignments_count: assignmentCounts[p.id] || 0,
+        assignments_count: assignmentsByUser[p.id]?.length || 0,
+        assignments: assignmentsByUser[p.id] || [],
       }));
 
       setSurveyors(surveyorsList);
@@ -182,6 +210,35 @@ export default function SurveyorsPage() {
       toast.error("Erreur lors du chargement des enquêteurs");
     } finally {
       setLoading(false);
+    }
+  };
+
+  const handleDeleteAssignment = async (assignmentId: string) => {
+    setDeletingAssignment(assignmentId);
+    try {
+      const { error } = await supabase
+        .from("survey_assignments")
+        .delete()
+        .eq("id", assignmentId);
+
+      if (error) throw error;
+
+      toast.success("Assignation supprimée");
+      fetchSurveyors();
+      
+      // Update selected surveyor's assignments
+      if (selectedSurveyor) {
+        setSelectedSurveyor({
+          ...selectedSurveyor,
+          assignments: selectedSurveyor.assignments.filter(a => a.id !== assignmentId),
+          assignments_count: selectedSurveyor.assignments_count - 1,
+        });
+      }
+    } catch (error) {
+      console.error("Error deleting assignment:", error);
+      toast.error("Erreur lors de la suppression");
+    } finally {
+      setDeletingAssignment(null);
     }
   };
 
@@ -331,6 +388,15 @@ export default function SurveyorsPage() {
                       <DropdownMenuItem
                         onClick={() => {
                           setSelectedSurveyor(surveyor);
+                          setIsViewAssignmentsOpen(true);
+                        }}
+                      >
+                        <Eye className="h-4 w-4 mr-2" />
+                        Voir les assignations
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setSelectedSurveyor(surveyor);
                           setIsAssignDialogOpen(true);
                         }}
                       >
@@ -446,6 +512,78 @@ export default function SurveyorsPage() {
               disabled={creating}
             >
               {creating ? "Création..." : "Créer l'enquêteur"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* View Assignments Dialog */}
+      <Dialog open={isViewAssignmentsOpen} onOpenChange={setIsViewAssignmentsOpen}>
+        <DialogContent className="max-w-2xl">
+          <DialogHeader>
+            <DialogTitle>
+              Sondages assignés à {selectedSurveyor?.profile.first_name || selectedSurveyor?.profile.email}
+            </DialogTitle>
+            <DialogDescription>
+              {selectedSurveyor?.assignments.length || 0} sondage(s) assigné(s)
+            </DialogDescription>
+          </DialogHeader>
+          <div className="py-4">
+            {selectedSurveyor?.assignments.length === 0 ? (
+              <div className="text-center py-8 text-muted-foreground">
+                <ClipboardList className="h-12 w-12 mx-auto mb-4 opacity-50" />
+                <p>Aucun sondage assigné</p>
+              </div>
+            ) : (
+              <Table>
+                <TableHeader>
+                  <TableRow>
+                    <TableHead>Sondage</TableHead>
+                    <TableHead>Assigné le</TableHead>
+                    <TableHead className="text-right">Actions</TableHead>
+                  </TableRow>
+                </TableHeader>
+                <TableBody>
+                  {selectedSurveyor?.assignments.map((assignment) => (
+                    <TableRow key={assignment.id}>
+                      <TableCell className="font-medium">{assignment.survey_title}</TableCell>
+                      <TableCell>
+                        {new Date(assignment.assigned_at).toLocaleDateString("fr-FR", {
+                          day: "numeric",
+                          month: "short",
+                          year: "numeric",
+                        })}
+                      </TableCell>
+                      <TableCell className="text-right">
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          className="text-destructive hover:text-destructive hover:bg-destructive/10"
+                          onClick={() => handleDeleteAssignment(assignment.id)}
+                          disabled={deletingAssignment === assignment.id}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      </TableCell>
+                    </TableRow>
+                  ))}
+                </TableBody>
+              </Table>
+            )}
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsViewAssignmentsOpen(false)}>
+              Fermer
+            </Button>
+            <Button 
+              className="gradient-primary"
+              onClick={() => {
+                setIsViewAssignmentsOpen(false);
+                setIsAssignDialogOpen(true);
+              }}
+            >
+              <ClipboardList className="h-4 w-4 mr-2" />
+              Assigner un sondage
             </Button>
           </DialogFooter>
         </DialogContent>
