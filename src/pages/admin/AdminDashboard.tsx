@@ -1,4 +1,5 @@
 import { useEffect, useState } from "react";
+import { Link } from "react-router-dom";
 import { supabase } from "@/integrations/supabase/client";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { 
@@ -157,30 +158,30 @@ export default function AdminDashboard() {
         </CardHeader>
         <CardContent>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <a
-              href="/admin/surveys"
+            <Link
+              to="/admin/surveys"
               className="p-4 rounded-lg border-2 border-dashed hover:border-primary/50 hover:bg-accent/50 transition-colors text-center"
             >
               <ClipboardList className="h-8 w-8 mx-auto mb-2 text-primary" />
               <p className="font-medium">Créer un sondage</p>
               <p className="text-sm text-muted-foreground">Nouveau questionnaire</p>
-            </a>
-            <a
-              href="/admin/surveyors"
+            </Link>
+            <Link
+              to="/admin/surveyors"
               className="p-4 rounded-lg border-2 border-dashed hover:border-secondary/50 hover:bg-accent/50 transition-colors text-center"
             >
               <Users className="h-8 w-8 mx-auto mb-2 text-secondary" />
               <p className="font-medium">Gérer les enquêteurs</p>
               <p className="text-sm text-muted-foreground">Équipe & assignations</p>
-            </a>
-            <a
-              href="/admin/responses"
+            </Link>
+            <Link
+              to="/admin/responses"
               className="p-4 rounded-lg border-2 border-dashed hover:border-success/50 hover:bg-accent/50 transition-colors text-center"
             >
               <FileCheck className="h-8 w-8 mx-auto mb-2 text-success" />
               <p className="font-medium">Voir les réponses</p>
               <p className="text-sm text-muted-foreground">Export & analyse</p>
-            </a>
+            </Link>
           </div>
         </CardContent>
       </Card>
