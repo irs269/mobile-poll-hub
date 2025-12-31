@@ -73,42 +73,77 @@ export default function Dashboard() {
 
   const fetchAssignments = async () => {
     try {
-      const { data, error } = await supabase
-        .from("survey_assignments")
-        .select(`
-          id,
-          survey_id,
-          surveys (
+      const isAdmin = roles.includes("admin") || roles.includes("supervisor");
+      
+      if (isAdmin) {
+        // Pour les admins/superviseurs: récupérer tous les sondages créés
+        const { data: surveysData, error: surveysError } = await supabase
+          .from("surveys")
+          .select("id, title, description, is_active")
+          .order("created_at", { ascending: false });
+
+        if (surveysError) throw surveysError;
+
+        // Convertir en format SurveyAssignment pour compatibilité
+        const typedData: SurveyAssignment[] = (surveysData || []).map((survey) => ({
+          id: survey.id,
+          survey_id: survey.id,
+          surveys: survey as Survey,
+        }));
+        setAssignments(typedData);
+
+        // Stats pour admin: tous les sondages et réponses
+        const { data: responses, error: responsesError } = await supabase
+          .from("survey_responses")
+          .select("id, completed_at");
+
+        if (responsesError) throw responsesError;
+
+        const completed = responses?.filter(r => r.completed_at).length || 0;
+
+        setStats({
+          totalAssigned: typedData.length,
+          completed,
+          pending: typedData.filter(a => a.surveys.is_active).length,
+        });
+      } else {
+        // Pour les enquêteurs: récupérer uniquement les sondages assignés
+        const { data, error } = await supabase
+          .from("survey_assignments")
+          .select(`
             id,
-            title,
-            description,
-            is_active
-          )
-        `)
-        .eq("surveyor_id", user?.id);
+            survey_id,
+            surveys (
+              id,
+              title,
+              description,
+              is_active
+            )
+          `)
+          .eq("surveyor_id", user?.id);
 
-      if (error) throw error;
+        if (error) throw error;
 
-      // Type assertion for the nested query result
-      const typedData = data as unknown as SurveyAssignment[];
-      setAssignments(typedData || []);
+        const typedData = data as unknown as SurveyAssignment[];
+        setAssignments(typedData || []);
 
-      // Fetch response stats
-      const { data: responses, error: responsesError } = await supabase
-        .from("survey_responses")
-        .select("id, completed_at")
-        .eq("surveyor_id", user?.id);
+        // Fetch response stats pour enquêteur
+        const { data: responses, error: responsesError } = await supabase
+          .from("survey_responses")
+          .select("id, completed_at")
+          .eq("surveyor_id", user?.id);
 
-      if (responsesError) throw responsesError;
+        if (responsesError) throw responsesError;
 
-      const completed = responses?.filter(r => r.completed_at).length || 0;
-      const pending = (typedData?.length || 0) - completed;
+        const completed = responses?.filter(r => r.completed_at).length || 0;
+        const pending = (typedData?.length || 0) - completed;
 
-      setStats({
-        totalAssigned: typedData?.length || 0,
-        completed,
-        pending: pending > 0 ? pending : 0,
-      });
+        setStats({
+          totalAssigned: typedData?.length || 0,
+          completed,
+          pending: pending > 0 ? pending : 0,
+        });
+      }
     } catch (error) {
       console.error("Error fetching assignments:", error);
       toast.error("Erreur lors du chargement des sondages");
