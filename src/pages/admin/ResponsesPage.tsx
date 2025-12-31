@@ -62,24 +62,46 @@ export default function ResponsesPage() {
 
   const fetchResponses = async () => {
     try {
-      const { data, error } = await supabase
+      // Fetch responses with survey info
+      const { data: responsesData, error: responsesError } = await supabase
         .from("survey_responses")
         .select(`
           *,
-          survey:surveys(title),
-          surveyor:profiles(email, first_name, last_name)
+          survey:surveys(title)
         `)
         .order("completed_at", { ascending: false });
 
-      if (error) throw error;
+      if (responsesError) throw responsesError;
 
-      const typedResponses: SurveyResponse[] = (data || []).map((r) => ({
+      // Get unique surveyor IDs
+      const surveyorIds = [...new Set((responsesData || [])
+        .map(r => r.surveyor_id)
+        .filter(Boolean))] as string[];
+
+      // Fetch profiles for surveyors
+      let profilesMap: Record<string, { email: string; first_name: string | null; last_name: string | null }> = {};
+      
+      if (surveyorIds.length > 0) {
+        const { data: profilesData } = await supabase
+          .from("profiles")
+          .select("id, email, first_name, last_name")
+          .in("id", surveyorIds);
+
+        if (profilesData) {
+          profilesMap = profilesData.reduce((acc, p) => {
+            acc[p.id] = { email: p.email, first_name: p.first_name, last_name: p.last_name };
+            return acc;
+          }, {} as typeof profilesMap);
+        }
+      }
+
+      const typedResponses: SurveyResponse[] = (responsesData || []).map((r) => ({
         ...r,
         responses: r.responses as Record<string, unknown>,
         gps_start: r.gps_start as { latitude: number; longitude: number } | null,
         gps_end: r.gps_end as { latitude: number; longitude: number } | null,
         survey: r.survey as unknown as { title: string },
-        surveyor: r.surveyor as unknown as { email: string; first_name: string | null; last_name: string | null } | null,
+        surveyor: r.surveyor_id ? profilesMap[r.surveyor_id] || null : null,
       }));
 
       setResponses(typedResponses);
