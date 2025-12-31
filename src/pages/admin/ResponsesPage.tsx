@@ -48,9 +48,18 @@ interface Survey {
   title: string;
 }
 
+interface SurveyQuestion {
+  id: string;
+  question_text: string;
+  question_type: string;
+  order_index: number;
+  survey_id: string;
+}
+
 export default function ResponsesPage() {
   const [responses, setResponses] = useState<SurveyResponse[]>([]);
   const [surveys, setSurveys] = useState<Survey[]>([]);
+  const [questions, setQuestions] = useState<SurveyQuestion[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSurveyId, setSelectedSurveyId] = useState<string>("all");
@@ -58,6 +67,7 @@ export default function ResponsesPage() {
   useEffect(() => {
     fetchResponses();
     fetchSurveys();
+    fetchQuestions();
   }, []);
 
   const fetchResponses = async () => {
@@ -127,6 +137,20 @@ export default function ResponsesPage() {
     }
   };
 
+  const fetchQuestions = async () => {
+    try {
+      const { data, error } = await supabase
+        .from("survey_questions")
+        .select("id, question_text, question_type, order_index, survey_id")
+        .order("order_index");
+
+      if (error) throw error;
+      setQuestions(data || []);
+    } catch (error) {
+      console.error("Error fetching questions:", error);
+    }
+  };
+
   const handleExportCSV = () => {
     const filteredData = getFilteredResponses();
     
@@ -135,36 +159,80 @@ export default function ResponsesPage() {
       return;
     }
 
-    // Build CSV content
+    // Déterminer les questions pertinentes pour l'export
+    const surveyIds = [...new Set(filteredData.map(r => r.survey_id))];
+    const relevantQuestions = questions
+      .filter(q => surveyIds.includes(q.survey_id))
+      .sort((a, b) => a.order_index - b.order_index);
+
+    // Créer un mapping question_id -> texte pour les en-têtes
+    const questionMap = new Map(relevantQuestions.map(q => [q.id, q.question_text]));
+
+    // En-têtes: métadonnées + questions
     const headers = [
-      "ID",
+      "ID Réponse",
       "Sondage",
-      "Enquêteur",
-      "Date",
-      "GPS Début",
-      "GPS Fin",
-      "Réponses",
+      "Enquêteur (Email)",
+      "Enquêteur (Nom)",
+      "Date de début",
+      "Date de fin",
+      "Durée (min)",
+      "GPS Début (Lat)",
+      "GPS Début (Lon)",
+      "GPS Fin (Lat)",
+      "GPS Fin (Lon)",
+      "Statut",
+      ...relevantQuestions.map(q => q.question_text),
     ];
 
-    const rows = filteredData.map((r) => [
-      r.id,
-      r.survey?.title || "",
-      r.surveyor?.email || "",
-      r.completed_at ? format(new Date(r.completed_at), "dd/MM/yyyy HH:mm", { locale: fr }) : "",
-      r.gps_start ? `${r.gps_start.latitude}, ${r.gps_start.longitude}` : "",
-      r.gps_end ? `${r.gps_end.latitude}, ${r.gps_end.longitude}` : "",
-      JSON.stringify(r.responses),
-    ]);
+    const rows = filteredData.map((r) => {
+      const startDate = r.started_at ? new Date(r.started_at) : null;
+      const endDate = r.completed_at ? new Date(r.completed_at) : null;
+      const duration = startDate && endDate 
+        ? Math.round((endDate.getTime() - startDate.getTime()) / 60000) 
+        : "";
 
-    const csvContent = [
-      headers.join(","),
-      ...rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(",")),
+      const surveyorName = r.surveyor?.first_name && r.surveyor?.last_name
+        ? `${r.surveyor.first_name} ${r.surveyor.last_name}`
+        : "";
+
+      // Extraire les réponses pour chaque question
+      const questionResponses = relevantQuestions.map(q => {
+        const answer = r.responses[q.id];
+        if (answer === undefined || answer === null) return "";
+        if (Array.isArray(answer)) return answer.join("; ");
+        if (typeof answer === "object") return JSON.stringify(answer);
+        return String(answer);
+      });
+
+      return [
+        r.id,
+        r.survey?.title || "",
+        r.surveyor?.email || "",
+        surveyorName,
+        startDate ? format(startDate, "dd/MM/yyyy HH:mm", { locale: fr }) : "",
+        endDate ? format(endDate, "dd/MM/yyyy HH:mm", { locale: fr }) : "",
+        duration,
+        r.gps_start?.latitude ?? "",
+        r.gps_start?.longitude ?? "",
+        r.gps_end?.latitude ?? "",
+        r.gps_end?.longitude ?? "",
+        r.completed_at ? "Terminé" : "En cours",
+        ...questionResponses,
+      ];
+    });
+
+    // Ajouter BOM pour UTF-8 dans Excel
+    const BOM = "\uFEFF";
+    const csvContent = BOM + [
+      headers.join(";"),
+      ...rows.map((row) => row.map((cell) => `"${String(cell).replace(/"/g, '""')}"`).join(";")),
     ].join("\n");
 
     const blob = new Blob([csvContent], { type: "text/csv;charset=utf-8;" });
     const link = document.createElement("a");
     link.href = URL.createObjectURL(blob);
-    link.download = `responses_${format(new Date(), "yyyyMMdd_HHmmss")}.csv`;
+    link.download = `reponses_${format(new Date(), "yyyyMMdd_HHmmss")}.csv`;
     link.click();
 
     toast.success("Export CSV téléchargé");
