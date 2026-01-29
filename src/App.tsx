@@ -17,6 +17,7 @@ import AdminLayout from "./pages/admin/AdminLayout";
 import AdminDashboard from "./pages/admin/AdminDashboard";
 import SurveysPage from "./pages/admin/SurveysPage";
 import SurveyEditor from "./pages/admin/SurveyEditor";
+import SurveyPreview from "./pages/admin/SurveyPreview";
 import SurveyorsPage from "./pages/admin/SurveyorsPage";
 import ResponsesPage from "./pages/admin/ResponsesPage";
 import ReportingPage from "./pages/admin/ReportingPage";
@@ -44,6 +45,7 @@ const App = () => (
               <Route index element={<AdminDashboard />} />
               <Route path="surveys" element={<SurveysPage />} />
               <Route path="surveys/:surveyId/edit" element={<SurveyEditor />} />
+              <Route path="surveys/:surveyId/preview" element={<SurveyPreview />} />
               <Route path="surveyors" element={<SurveyorsPage />} />
               <Route path="responses" element={<ResponsesPage />} />
               <Route path="reporting" element={<ReportingPage />} />
