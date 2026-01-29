@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { PageTransition } from "@/components/PageTransition";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -252,7 +253,8 @@ export default function ResponsesPage() {
   const filteredResponses = getFilteredResponses();
 
   return (
-    <div className="p-4 lg:p-8 space-y-6">
+    <PageTransition>
+      <div className="p-4 lg:p-8 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold">Réponses</h1>
@@ -363,7 +365,8 @@ export default function ResponsesPage() {
             </Table>
           </div>
         </Card>
-      )}
-    </div>
+        )}
+      </div>
+    </PageTransition>
   );
 }

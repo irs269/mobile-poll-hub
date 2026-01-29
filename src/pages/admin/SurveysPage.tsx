@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { PageTransition } from "@/components/PageTransition";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -174,7 +175,8 @@ export default function SurveysPage() {
   );
 
   return (
-    <div className="p-4 lg:p-8 space-y-6">
+    <PageTransition>
+      <div className="p-4 lg:p-8 space-y-6">
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
           <h1 className="text-2xl lg:text-3xl font-bold">Sondages</h1>
@@ -374,6 +376,7 @@ export default function SurveysPage() {
           </DialogFooter>
         </DialogContent>
       </Dialog>
-    </div>
+      </div>
+    </PageTransition>
   );
 }

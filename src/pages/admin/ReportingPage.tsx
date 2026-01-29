@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo } from "react";
 import { supabase } from "@/integrations/supabase/client";
+import { PageTransition } from "@/components/PageTransition";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -414,7 +415,8 @@ export default function ReportingPage() {
   }
 
   return (
-    <div className="p-4 lg:p-8 space-y-6">
+    <PageTransition>
+      <div className="p-4 lg:p-8 space-y-6">
       {/* Header */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
         <div>
@@ -770,7 +772,8 @@ export default function ReportingPage() {
             </div>
           </TabsContent>
         )}
-      </Tabs>
-    </div>
+        </Tabs>
+      </div>
+    </PageTransition>
   );
 }
