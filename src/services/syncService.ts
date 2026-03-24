@@ -34,9 +34,9 @@ export async function syncAll(userId: string, roles: string[]): Promise<SyncResu
         const { error } = await supabase.from("survey_responses").insert([{
           survey_id: response.survey_id,
           surveyor_id: response.surveyor_id,
-          responses: response.responses,
-          gps_start: response.gps_start,
-          gps_end: response.gps_end,
+          responses: JSON.parse(JSON.stringify(response.responses)),
+          gps_start: response.gps_start ? JSON.parse(JSON.stringify(response.gps_start)) : null,
+          gps_end: response.gps_end ? JSON.parse(JSON.stringify(response.gps_end)) : null,
           started_at: response.started_at,
           completed_at: response.completed_at,
         }]);
