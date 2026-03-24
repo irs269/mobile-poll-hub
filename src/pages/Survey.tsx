@@ -11,15 +11,18 @@ import { Textarea } from "@/components/ui/textarea";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
 import { 
   ArrowLeft, 
   ArrowRight, 
   Check, 
   MapPin, 
-  Save,
-  Loader2 
+  Loader2,
+  WifiOff
 } from "lucide-react";
+import { getOfflineSurvey, getOfflineQuestions, savePendingResponse } from "@/services/offlineStorage";
+import { v4 as uuidv4 } from "crypto";
 
 interface SurveyQuestion {
   id: string;
@@ -58,6 +61,8 @@ export default function SurveyPage() {
   const [gpsStart, setGpsStart] = useState<GpsCoords | null>(null);
   const [gpsEnd, setGpsEnd] = useState<GpsCoords | null>(null);
   const [gpsLoading, setGpsLoading] = useState(false);
+  const [isOnline, setIsOnline] = useState(navigator.onLine);
+  const [savedOffline, setSavedOffline] = useState(false);
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -69,55 +74,83 @@ export default function SurveyPage() {
       fetchSurveyData();
       captureGps("start");
     }
+
+    const handleOnline = () => setIsOnline(true);
+    const handleOffline = () => setIsOnline(false);
+    window.addEventListener("online", handleOnline);
+    window.addEventListener("offline", handleOffline);
+    return () => {
+      window.removeEventListener("online", handleOnline);
+      window.removeEventListener("offline", handleOffline);
+    };
   }, [surveyId, user, authLoading, navigate]);
 
   const fetchSurveyData = async () => {
     try {
-      // Fetch survey details
-      const { data: surveyData, error: surveyError } = await supabase
-        .from("surveys")
-        .select("*")
-        .eq("id", surveyId)
-        .maybeSingle();
+      if (navigator.onLine) {
+        // Try online first
+        const { data: surveyData, error: surveyError } = await supabase
+          .from("surveys")
+          .select("*")
+          .eq("id", surveyId)
+          .maybeSingle();
 
-      if (surveyError) throw surveyError;
-      if (!surveyData) {
-        toast.error("Sondage introuvable");
-        navigate("/dashboard");
-        return;
+        if (surveyError) throw surveyError;
+        if (!surveyData) {
+          // Fallback to offline
+          await loadOfflineSurvey();
+          return;
+        }
+
+        setSurvey(surveyData);
+
+        const { data: questionsData, error: questionsError } = await supabase
+          .from("survey_questions")
+          .select("*")
+          .eq("survey_id", surveyId)
+          .order("order_index", { ascending: true });
+
+        if (questionsError) throw questionsError;
+
+        setQuestions((questionsData || []).map(q => ({
+          ...q,
+          options: q.options as string[] | null,
+          skip_logic: q.skip_logic as { condition: string; target_question: number } | null,
+        })));
+      } else {
+        await loadOfflineSurvey();
       }
-
-      setSurvey(surveyData);
-
-      // Fetch questions
-      const { data: questionsData, error: questionsError } = await supabase
-        .from("survey_questions")
-        .select("*")
-        .eq("survey_id", surveyId)
-        .order("order_index", { ascending: true });
-
-      if (questionsError) throw questionsError;
-
-      const typedQuestions: SurveyQuestion[] = (questionsData || []).map(q => ({
-        ...q,
-        options: q.options as string[] | null,
-        skip_logic: q.skip_logic as { condition: string; target_question: number } | null,
-      }));
-
-      setQuestions(typedQuestions);
     } catch (error) {
       console.error("Error fetching survey:", error);
-      toast.error("Erreur lors du chargement du sondage");
+      // Fallback to offline on any error
+      await loadOfflineSurvey();
     } finally {
       setLoading(false);
     }
   };
 
-  const captureGps = async (type: "start" | "end") => {
-    if (!navigator.geolocation) {
-      toast.error("La géolocalisation n'est pas supportée");
-      return;
+  const loadOfflineSurvey = async () => {
+    try {
+      if (!surveyId) return;
+      const offlineSurvey = await getOfflineSurvey(surveyId);
+      if (!offlineSurvey) {
+        toast.error("Sondage introuvable en mode hors ligne");
+        navigate("/dashboard");
+        return;
+      }
+      setSurvey(offlineSurvey);
+
+      const offlineQuestions = await getOfflineQuestions(surveyId);
+      const sorted = offlineQuestions.sort((a, b) => a.order_index - b.order_index);
+      setQuestions(sorted);
+    } catch (error) {
+      console.error("Error loading offline survey:", error);
+      toast.error("Erreur de chargement hors ligne");
     }
+  };
+
+  const captureGps = async (type: "start" | "end") => {
+    if (!navigator.geolocation) return;
 
     setGpsLoading(true);
     
@@ -132,36 +165,28 @@ export default function SurveyPage() {
         
         if (type === "start") {
           setGpsStart(coords);
-          toast.success("Position GPS capturée");
         } else {
           setGpsEnd(coords);
         }
         setGpsLoading(false);
       },
-      (error) => {
-        console.error("GPS error:", error);
-        toast.error("Impossible d'obtenir la position GPS");
-        setGpsLoading(false);
-      },
+      () => setGpsLoading(false),
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
   };
 
   const visibleQuestions = useMemo(() => {
-    return questions.filter((q, index) => {
+    return questions.filter((q) => {
       if (!q.skip_logic) return true;
-      
-      // Check skip logic based on previous answers
       const { condition, target_question } = q.skip_logic;
       const targetAnswer = responses[questions[target_question]?.id];
-      
       if (!targetAnswer) return true;
       return String(targetAnswer) === condition;
     });
   }, [questions, responses]);
 
   const currentQuestion = visibleQuestions[currentIndex];
-  const progress = ((currentIndex + 1) / visibleQuestions.length) * 100;
+  const progress = visibleQuestions.length > 0 ? ((currentIndex + 1) / visibleQuestions.length) * 100 : 0;
 
   const handleResponseChange = (questionId: string, value: unknown) => {
     setResponses((prev) => ({ ...prev, [questionId]: value }));
@@ -172,20 +197,17 @@ export default function SurveyPage() {
       const current = (prev[questionId] as string[]) || [];
       if (checked) {
         return { ...prev, [questionId]: [...current, option] };
-      } else {
-        return { ...prev, [questionId]: current.filter((o) => o !== option) };
       }
+      return { ...prev, [questionId]: current.filter((o) => o !== option) };
     });
   };
 
   const canProceed = () => {
     if (!currentQuestion) return false;
     if (!currentQuestion.is_required) return true;
-    
     const answer = responses[currentQuestion.id];
     if (answer === undefined || answer === null || answer === "") return false;
     if (Array.isArray(answer) && answer.length === 0) return false;
-    
     return true;
   };
 
@@ -194,7 +216,6 @@ export default function SurveyPage() {
       toast.error("Cette question est obligatoire");
       return;
     }
-    
     if (currentIndex < visibleQuestions.length - 1) {
       setCurrentIndex(currentIndex + 1);
     }
@@ -215,25 +236,44 @@ export default function SurveyPage() {
     setSubmitting(true);
     await captureGps("end");
 
+    const responseData = {
+      survey_id: surveyId!,
+      surveyor_id: user?.id || "",
+      responses: JSON.parse(JSON.stringify(responses)),
+      gps_start: gpsStart ? JSON.parse(JSON.stringify(gpsStart)) : null,
+      gps_end: gpsEnd ? JSON.parse(JSON.stringify(gpsEnd)) : null,
+      started_at: new Date(gpsStart?.timestamp || Date.now()).toISOString(),
+      completed_at: new Date().toISOString(),
+    };
+
+    if (isOnline) {
+      try {
+        const { error } = await supabase.from("survey_responses").insert([responseData]);
+        if (error) throw error;
+        toast.success("Réponses enregistrées avec succès!");
+        navigate("/dashboard");
+        return;
+      } catch (error) {
+        console.error("Error submitting online, saving offline:", error);
+        // Fall through to offline save
+      }
+    }
+
+    // Save offline
     try {
-      const responseData = {
-        survey_id: surveyId!,
-        surveyor_id: user?.id,
-        responses: JSON.parse(JSON.stringify(responses)),
-        gps_start: gpsStart ? JSON.parse(JSON.stringify(gpsStart)) : null,
-        gps_end: gpsEnd ? JSON.parse(JSON.stringify(gpsEnd)) : null,
-        started_at: new Date(gpsStart?.timestamp || Date.now()).toISOString(),
-        completed_at: new Date().toISOString(),
-      };
-      const { error } = await supabase.from("survey_responses").insert([responseData]);
-
-      if (error) throw error;
-
-      toast.success("Réponses enregistrées avec succès!");
-      navigate("/dashboard");
+      const localId = crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random().toString(36).slice(2)}`;
+      await savePendingResponse({
+        localId,
+        ...responseData,
+        synced: false,
+        created_at: new Date().toISOString(),
+      });
+      setSavedOffline(true);
+      toast.success("Réponses sauvegardées localement ! Synchronisez quand vous serez en ligne.");
+      setTimeout(() => navigate("/dashboard"), 1500);
     } catch (error) {
-      console.error("Error submitting responses:", error);
-      toast.error("Erreur lors de l'envoi des réponses");
+      console.error("Error saving offline:", error);
+      toast.error("Erreur lors de la sauvegarde");
     } finally {
       setSubmitting(false);
     }
@@ -241,92 +281,41 @@ export default function SurveyPage() {
 
   const renderQuestion = () => {
     if (!currentQuestion) return null;
-
     const { id, question_type, options } = currentQuestion;
     const value = responses[id];
 
     switch (question_type) {
       case "single_choice":
         return (
-          <RadioGroup
-            value={value as string}
-            onValueChange={(val) => handleResponseChange(id, val)}
-            className="space-y-3"
-          >
+          <RadioGroup value={value as string} onValueChange={(val) => handleResponseChange(id, val)} className="space-y-3">
             {options?.map((option, i) => (
-              <div
-                key={i}
-                className="flex items-center space-x-3 p-4 rounded-lg border-2 border-muted hover:border-primary/30 transition-colors cursor-pointer"
-                onClick={() => handleResponseChange(id, option)}
-              >
+              <div key={i} className="flex items-center space-x-3 p-4 rounded-lg border-2 border-muted hover:border-primary/30 transition-colors cursor-pointer" onClick={() => handleResponseChange(id, option)}>
                 <RadioGroupItem value={option} id={`${id}-${i}`} />
-                <Label htmlFor={`${id}-${i}`} className="flex-1 cursor-pointer font-medium">
-                  {option}
-                </Label>
+                <Label htmlFor={`${id}-${i}`} className="flex-1 cursor-pointer font-medium">{option}</Label>
               </div>
             ))}
           </RadioGroup>
         );
-
       case "multiple_choice":
         return (
           <div className="space-y-3">
             {options?.map((option, i) => {
               const checked = ((value as string[]) || []).includes(option);
               return (
-                <div
-                  key={i}
-                  className={`flex items-center space-x-3 p-4 rounded-lg border-2 transition-colors cursor-pointer ${
-                    checked ? "border-primary bg-primary/5" : "border-muted hover:border-primary/30"
-                  }`}
-                  onClick={() => handleMultipleChoice(id, option, !checked)}
-                >
-                  <Checkbox
-                    checked={checked}
-                    onCheckedChange={(c) => handleMultipleChoice(id, option, c as boolean)}
-                    id={`${id}-${i}`}
-                  />
-                  <Label htmlFor={`${id}-${i}`} className="flex-1 cursor-pointer font-medium">
-                    {option}
-                  </Label>
+                <div key={i} className={`flex items-center space-x-3 p-4 rounded-lg border-2 transition-colors cursor-pointer ${checked ? "border-primary bg-primary/5" : "border-muted hover:border-primary/30"}`} onClick={() => handleMultipleChoice(id, option, !checked)}>
+                  <Checkbox checked={checked} onCheckedChange={(c) => handleMultipleChoice(id, option, c as boolean)} id={`${id}-${i}`} />
+                  <Label htmlFor={`${id}-${i}`} className="flex-1 cursor-pointer font-medium">{option}</Label>
                 </div>
               );
             })}
           </div>
         );
-
       case "text_short":
-        return (
-          <Input
-            value={(value as string) || ""}
-            onChange={(e) => handleResponseChange(id, e.target.value)}
-            placeholder="Votre réponse..."
-            className="text-base h-12"
-          />
-        );
-
+        return <Input value={(value as string) || ""} onChange={(e) => handleResponseChange(id, e.target.value)} placeholder="Votre réponse..." className="text-base h-12" />;
       case "text_long":
-        return (
-          <Textarea
-            value={(value as string) || ""}
-            onChange={(e) => handleResponseChange(id, e.target.value)}
-            placeholder="Votre réponse détaillée..."
-            rows={5}
-            className="text-base resize-none"
-          />
-        );
-
+        return <Textarea value={(value as string) || ""} onChange={(e) => handleResponseChange(id, e.target.value)} placeholder="Votre réponse détaillée..." rows={5} className="text-base resize-none" />;
       case "numeric":
-        return (
-          <Input
-            type="number"
-            value={(value as string) || ""}
-            onChange={(e) => handleResponseChange(id, e.target.value)}
-            placeholder="0"
-            className="text-base h-12 text-center text-2xl font-semibold"
-          />
-        );
-
+        return <Input type="number" value={(value as string) || ""} onChange={(e) => handleResponseChange(id, e.target.value)} placeholder="0" className="text-base h-12 text-center text-2xl font-semibold" />;
       case "likert":
         return (
           <div className="space-y-4">
@@ -334,37 +323,18 @@ export default function SurveyPage() {
               <span>Pas du tout</span>
               <span>Totalement</span>
             </div>
-            <RadioGroup
-              value={value as string}
-              onValueChange={(val) => handleResponseChange(id, val)}
-              className="flex justify-between"
-            >
+            <RadioGroup value={value as string} onValueChange={(val) => handleResponseChange(id, val)} className="flex justify-between">
               {[1, 2, 3, 4, 5].map((num) => (
                 <div key={num} className="text-center">
-                  <RadioGroupItem
-                    value={String(num)}
-                    id={`${id}-${num}`}
-                    className="h-12 w-12 border-2"
-                  />
-                  <Label htmlFor={`${id}-${num}`} className="block mt-1 text-sm font-medium">
-                    {num}
-                  </Label>
+                  <RadioGroupItem value={String(num)} id={`${id}-${num}`} className="h-12 w-12 border-2" />
+                  <Label htmlFor={`${id}-${num}`} className="block mt-1 text-sm font-medium">{num}</Label>
                 </div>
               ))}
             </RadioGroup>
           </div>
         );
-
       case "date":
-        return (
-          <Input
-            type="date"
-            value={(value as string) || ""}
-            onChange={(e) => handleResponseChange(id, e.target.value)}
-            className="text-base h-12"
-          />
-        );
-
+        return <Input type="date" value={(value as string) || ""} onChange={(e) => handleResponseChange(id, e.target.value)} className="text-base h-12" />;
       default:
         return null;
     }
@@ -412,17 +382,24 @@ export default function SurveyPage() {
               Question {currentIndex + 1} / {visibleQuestions.length}
             </p>
           </div>
-          {gpsStart && (
-            <div className="flex items-center gap-1 text-success text-xs">
-              <MapPin className="h-3 w-3" />
-              <span>GPS</span>
-            </div>
-          )}
+          <div className="flex items-center gap-2">
+            {!isOnline && (
+              <Badge variant="outline" className="text-warning border-warning/30 gap-1">
+                <WifiOff className="h-3 w-3" />
+                Hors ligne
+              </Badge>
+            )}
+            {gpsStart && (
+              <div className="flex items-center gap-1 text-success text-xs">
+                <MapPin className="h-3 w-3" />
+              </div>
+            )}
+          </div>
         </div>
         <Progress value={progress} className="h-1 rounded-none" />
       </header>
 
-      {/* Question Content */}
+      {/* Question */}
       <main className="flex-1 container px-4 py-6">
         <Card className="border-0 shadow-lg animate-slide-up">
           <CardHeader className="pb-4">
@@ -432,9 +409,7 @@ export default function SurveyPage() {
               </span>
               <CardTitle className="text-lg leading-tight">
                 {currentQuestion?.question_text}
-                {currentQuestion?.is_required && (
-                  <span className="text-destructive ml-1">*</span>
-                )}
+                {currentQuestion?.is_required && <span className="text-destructive ml-1">*</span>}
               </CardTitle>
             </div>
           </CardHeader>
@@ -442,40 +417,21 @@ export default function SurveyPage() {
         </Card>
       </main>
 
-      {/* Navigation Footer */}
+      {/* Footer */}
       <footer className="sticky bottom-0 bg-card border-t shadow-lg p-4">
         <div className="container flex items-center gap-3">
-          <Button
-            variant="outline"
-            onClick={handlePrevious}
-            disabled={currentIndex === 0}
-            className="flex-1"
-          >
+          <Button variant="outline" onClick={handlePrevious} disabled={currentIndex === 0} className="flex-1">
             <ArrowLeft className="h-4 w-4 mr-2" />
             Précédent
           </Button>
 
           {isLastQuestion ? (
-            <Button
-              variant="gradient"
-              onClick={handleSubmit}
-              disabled={submitting || !canProceed()}
-              className="flex-1"
-            >
-              {submitting ? (
-                <Loader2 className="h-4 w-4 mr-2 animate-spin" />
-              ) : (
-                <Check className="h-4 w-4 mr-2" />
-              )}
-              Terminer
+            <Button variant="gradient" onClick={handleSubmit} disabled={submitting || !canProceed()} className="flex-1">
+              {submitting ? <Loader2 className="h-4 w-4 mr-2 animate-spin" /> : <Check className="h-4 w-4 mr-2" />}
+              {isOnline ? "Terminer" : "Sauvegarder"}
             </Button>
           ) : (
-            <Button
-              variant="default"
-              onClick={handleNext}
-              disabled={!canProceed()}
-              className="flex-1"
-            >
+            <Button variant="default" onClick={handleNext} disabled={!canProceed()} className="flex-1">
               Suivant
               <ArrowRight className="h-4 w-4 ml-2" />
             </Button>
