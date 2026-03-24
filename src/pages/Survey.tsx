@@ -22,7 +22,6 @@ import {
   WifiOff
 } from "lucide-react";
 import { getOfflineSurvey, getOfflineQuestions, savePendingResponse } from "@/services/offlineStorage";
-import { v4 as uuidv4 } from "crypto";
 
 interface SurveyQuestion {
   id: string;
