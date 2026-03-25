@@ -5,14 +5,10 @@ import { PageTransition } from "@/components/PageTransition";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Textarea } from "@/components/ui/textarea";
-import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
-import { Checkbox } from "@/components/ui/checkbox";
 import { Progress } from "@/components/ui/progress";
 import { Badge } from "@/components/ui/badge";
 import { toast } from "sonner";
+import { QuestionRenderer } from "@/components/survey/QuestionRenderer";
 import { 
   ArrowLeft, 
   ArrowRight, 
@@ -164,133 +160,17 @@ export default function SurveyPreview() {
 
   const renderQuestion = () => {
     if (!currentQuestion) return null;
-
     const { id, question_type, options } = currentQuestion;
-    const value = responses[id];
-
-    switch (question_type) {
-      case "single_choice":
-        return (
-          <RadioGroup
-            value={value as string}
-            onValueChange={(val) => handleResponseChange(id, val)}
-            className="space-y-3"
-          >
-            {options?.map((option, i) => (
-              <div
-                key={i}
-                className="flex items-center space-x-3 p-4 rounded-lg border-2 border-muted hover:border-primary/30 transition-colors cursor-pointer"
-                onClick={() => handleResponseChange(id, option)}
-              >
-                <RadioGroupItem value={option} id={`${id}-${i}`} />
-                <Label htmlFor={`${id}-${i}`} className="flex-1 cursor-pointer font-medium">
-                  {option}
-                </Label>
-              </div>
-            ))}
-          </RadioGroup>
-        );
-
-      case "multiple_choice":
-        return (
-          <div className="space-y-3">
-            {options?.map((option, i) => {
-              const checked = ((value as string[]) || []).includes(option);
-              return (
-                <div
-                  key={i}
-                  className={`flex items-center space-x-3 p-4 rounded-lg border-2 transition-colors cursor-pointer ${
-                    checked ? "border-primary bg-primary/5" : "border-muted hover:border-primary/30"
-                  }`}
-                  onClick={() => handleMultipleChoice(id, option, !checked)}
-                >
-                  <Checkbox
-                    checked={checked}
-                    onCheckedChange={(c) => handleMultipleChoice(id, option, c as boolean)}
-                    id={`${id}-${i}`}
-                  />
-                  <Label htmlFor={`${id}-${i}`} className="flex-1 cursor-pointer font-medium">
-                    {option}
-                  </Label>
-                </div>
-              );
-            })}
-          </div>
-        );
-
-      case "text_short":
-        return (
-          <Input
-            value={(value as string) || ""}
-            onChange={(e) => handleResponseChange(id, e.target.value)}
-            placeholder="Votre réponse..."
-            className="text-base h-12"
-          />
-        );
-
-      case "text_long":
-        return (
-          <Textarea
-            value={(value as string) || ""}
-            onChange={(e) => handleResponseChange(id, e.target.value)}
-            placeholder="Votre réponse détaillée..."
-            rows={5}
-            className="text-base resize-none"
-          />
-        );
-
-      case "numeric":
-        return (
-          <Input
-            type="number"
-            value={(value as string) || ""}
-            onChange={(e) => handleResponseChange(id, e.target.value)}
-            placeholder="0"
-            className="text-base h-12 text-center text-2xl font-semibold"
-          />
-        );
-
-      case "likert":
-        return (
-          <div className="space-y-4">
-            <div className="flex justify-between text-sm text-muted-foreground px-2">
-              <span>Pas du tout</span>
-              <span>Totalement</span>
-            </div>
-            <RadioGroup
-              value={value as string}
-              onValueChange={(val) => handleResponseChange(id, val)}
-              className="flex justify-between"
-            >
-              {[1, 2, 3, 4, 5].map((num) => (
-                <div key={num} className="text-center">
-                  <RadioGroupItem
-                    value={String(num)}
-                    id={`${id}-${num}`}
-                    className="h-12 w-12 border-2"
-                  />
-                  <Label htmlFor={`${id}-${num}`} className="block mt-1 text-sm font-medium">
-                    {num}
-                  </Label>
-                </div>
-              ))}
-            </RadioGroup>
-          </div>
-        );
-
-      case "date":
-        return (
-          <Input
-            type="date"
-            value={(value as string) || ""}
-            onChange={(e) => handleResponseChange(id, e.target.value)}
-            className="text-base h-12"
-          />
-        );
-
-      default:
-        return null;
-    }
+    return (
+      <QuestionRenderer
+        questionId={id}
+        questionType={question_type}
+        options={options}
+        value={responses[id]}
+        onChange={(val) => handleResponseChange(id, val)}
+        onMultipleChoice={(option, checked) => handleMultipleChoice(id, option, checked)}
+      />
+    );
   };
 
   if (loading) {

@@ -24,6 +24,7 @@ import {
   Eye
 } from "lucide-react";
 import { toast } from "sonner";
+import { questionTypes, questionTypeCategories, typeNeedsOptions, typeNeedsMatrixRows } from "@/components/survey/questionTypes";
 
 interface Question {
   id?: string;
@@ -33,6 +34,7 @@ interface Question {
   is_required: boolean;
   order_index: number;
   skip_logic: null;
+  matrix_rows?: string[];
 }
 
 interface Survey {
@@ -41,16 +43,6 @@ interface Survey {
   description: string | null;
   is_active: boolean;
 }
-
-const questionTypes = [
-  { value: "single_choice", label: "Choix unique" },
-  { value: "multiple_choice", label: "Choix multiples" },
-  { value: "text_short", label: "Texte court" },
-  { value: "text_long", label: "Texte long" },
-  { value: "numeric", label: "Numérique" },
-  { value: "likert", label: "Échelle Likert" },
-  { value: "date", label: "Date" },
-];
 
 export default function SurveyEditor() {
   const { surveyId } = useParams<{ surveyId: string }>();
@@ -189,8 +181,24 @@ export default function SurveyEditor() {
     }
   };
 
-  const needsOptions = (type: string) => 
-    ["single_choice", "multiple_choice"].includes(type);
+  const handleAddMatrixRow = (questionIndex: number) => {
+    const question = questions[questionIndex];
+    const rows = question.matrix_rows || [];
+    handleUpdateQuestion(questionIndex, { matrix_rows: [...rows, `Ligne ${rows.length + 1}`] });
+  };
+
+  const handleUpdateMatrixRow = (questionIndex: number, rowIndex: number, value: string) => {
+    const question = questions[questionIndex];
+    const rows = [...(question.matrix_rows || [])];
+    rows[rowIndex] = value;
+    handleUpdateQuestion(questionIndex, { matrix_rows: rows });
+  };
+
+  const handleDeleteMatrixRow = (questionIndex: number, rowIndex: number) => {
+    const question = questions[questionIndex];
+    const rows = (question.matrix_rows || []).filter((_, i) => i !== rowIndex);
+    handleUpdateQuestion(questionIndex, { matrix_rows: rows });
+  };
 
   if (loading) {
     return (
@@ -260,15 +268,24 @@ export default function SurveyEditor() {
                         handleUpdateQuestion(index, { question_type: value })
                       }
                     >
-                      <SelectTrigger className="w-[180px]">
+                      <SelectTrigger className="w-[220px]">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
-                        {questionTypes.map((type) => (
-                          <SelectItem key={type.value} value={type.value}>
-                            {type.label}
-                          </SelectItem>
-                        ))}
+                      <SelectContent className="max-h-80">
+                        {questionTypeCategories.map((cat) => {
+                          const types = questionTypes.filter(t => t.category === cat.key);
+                          if (types.length === 0) return null;
+                          return (
+                            <div key={cat.key}>
+                              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">{cat.label}</div>
+                              {types.map((type) => (
+                                <SelectItem key={type.value} value={type.value}>
+                                  {type.icon} {type.label}
+                                </SelectItem>
+                              ))}
+                            </div>
+                          );
+                        })}
                       </SelectContent>
                     </Select>
                     <div className="flex items-center gap-2">
@@ -297,9 +314,10 @@ export default function SurveyEditor() {
             </CardHeader>
 
             {/* Options for choice questions */}
-            {needsOptions(question.question_type) && (
+            {typeNeedsOptions(question.question_type) && (
               <CardContent className="pt-2">
                 <div className="space-y-2 ml-10">
+                  <Label className="text-xs text-muted-foreground uppercase tracking-wide">Options</Label>
                   {question.options.map((option, optIndex) => (
                     <div key={optIndex} className="flex items-center gap-2">
                       <div className="w-4 h-4 rounded-full border-2 border-muted-foreground/30" />
@@ -331,6 +349,30 @@ export default function SurveyEditor() {
                     Ajouter une option
                   </Button>
                 </div>
+
+                {/* Matrix rows */}
+                {typeNeedsMatrixRows(question.question_type) && (
+                  <div className="space-y-2 ml-10 mt-4">
+                    <Label className="text-xs text-muted-foreground uppercase tracking-wide">Lignes de la matrice</Label>
+                    {(question.matrix_rows || []).map((row, rowIndex) => (
+                      <div key={rowIndex} className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-xs">{rowIndex + 1}</Badge>
+                        <Input
+                          value={row}
+                          onChange={(e) => handleUpdateMatrixRow(index, rowIndex, e.target.value)}
+                          className="flex-1"
+                        />
+                        <Button variant="ghost" size="icon" onClick={() => handleDeleteMatrixRow(index, rowIndex)}>
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                    <Button variant="ghost" size="sm" className="ml-6" onClick={() => handleAddMatrixRow(index)}>
+                      <Plus className="h-4 w-4 mr-1" />
+                      Ajouter une ligne
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             )}
           </Card>
