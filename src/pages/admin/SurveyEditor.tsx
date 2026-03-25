@@ -24,6 +24,7 @@ import {
   Eye
 } from "lucide-react";
 import { toast } from "sonner";
+import { questionTypes, questionTypeCategories, typeNeedsOptions, typeNeedsMatrixRows } from "@/components/survey/questionTypes";
 
 interface Question {
   id?: string;
@@ -33,6 +34,7 @@ interface Question {
   is_required: boolean;
   order_index: number;
   skip_logic: null;
+  matrix_rows?: string[];
 }
 
 interface Survey {
@@ -41,16 +43,6 @@ interface Survey {
   description: string | null;
   is_active: boolean;
 }
-
-const questionTypes = [
-  { value: "single_choice", label: "Choix unique" },
-  { value: "multiple_choice", label: "Choix multiples" },
-  { value: "text_short", label: "Texte court" },
-  { value: "text_long", label: "Texte long" },
-  { value: "numeric", label: "Numérique" },
-  { value: "likert", label: "Échelle Likert" },
-  { value: "date", label: "Date" },
-];
 
 export default function SurveyEditor() {
   const { surveyId } = useParams<{ surveyId: string }>();
