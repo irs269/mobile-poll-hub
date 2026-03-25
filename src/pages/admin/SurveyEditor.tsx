@@ -268,15 +268,24 @@ export default function SurveyEditor() {
                         handleUpdateQuestion(index, { question_type: value })
                       }
                     >
-                      <SelectTrigger className="w-[180px]">
+                      <SelectTrigger className="w-[220px]">
                         <SelectValue />
                       </SelectTrigger>
-                      <SelectContent>
-                        {questionTypes.map((type) => (
-                          <SelectItem key={type.value} value={type.value}>
-                            {type.label}
-                          </SelectItem>
-                        ))}
+                      <SelectContent className="max-h-80">
+                        {questionTypeCategories.map((cat) => {
+                          const types = questionTypes.filter(t => t.category === cat.key);
+                          if (types.length === 0) return null;
+                          return (
+                            <div key={cat.key}>
+                              <div className="px-2 py-1.5 text-xs font-semibold text-muted-foreground">{cat.label}</div>
+                              {types.map((type) => (
+                                <SelectItem key={type.value} value={type.value}>
+                                  {type.icon} {type.label}
+                                </SelectItem>
+                              ))}
+                            </div>
+                          );
+                        })}
                       </SelectContent>
                     </Select>
                     <div className="flex items-center gap-2">
