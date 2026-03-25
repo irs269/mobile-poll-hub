@@ -181,8 +181,24 @@ export default function SurveyEditor() {
     }
   };
 
-  const needsOptions = (type: string) => 
-    ["single_choice", "multiple_choice"].includes(type);
+  const handleAddMatrixRow = (questionIndex: number) => {
+    const question = questions[questionIndex];
+    const rows = question.matrix_rows || [];
+    handleUpdateQuestion(questionIndex, { matrix_rows: [...rows, `Ligne ${rows.length + 1}`] });
+  };
+
+  const handleUpdateMatrixRow = (questionIndex: number, rowIndex: number, value: string) => {
+    const question = questions[questionIndex];
+    const rows = [...(question.matrix_rows || [])];
+    rows[rowIndex] = value;
+    handleUpdateQuestion(questionIndex, { matrix_rows: rows });
+  };
+
+  const handleDeleteMatrixRow = (questionIndex: number, rowIndex: number) => {
+    const question = questions[questionIndex];
+    const rows = (question.matrix_rows || []).filter((_, i) => i !== rowIndex);
+    handleUpdateQuestion(questionIndex, { matrix_rows: rows });
+  };
 
   if (loading) {
     return (
