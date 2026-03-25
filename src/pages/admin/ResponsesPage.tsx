@@ -152,7 +152,7 @@ export default function ResponsesPage() {
     }
   };
 
-  const handleExportCSV = () => {
+  const handleExportCSV = async () => {
     const filteredData = getFilteredResponses();
     
     if (filteredData.length === 0) {
@@ -160,11 +160,24 @@ export default function ResponsesPage() {
       return;
     }
 
-    // Déterminer les questions pertinentes pour l'export
+    // Fetch questions directly to avoid stale state
     const surveyIds = [...new Set(filteredData.map(r => r.survey_id))];
-    const relevantQuestions = questions
-      .filter(q => surveyIds.includes(q.survey_id))
-      .sort((a, b) => a.order_index - b.order_index);
+    
+    let relevantQuestions: SurveyQuestion[] = [];
+    try {
+      const { data, error } = await supabase
+        .from("survey_questions")
+        .select("id, question_text, question_type, order_index, survey_id")
+        .in("survey_id", surveyIds)
+        .order("order_index");
+      
+      if (error) throw error;
+      relevantQuestions = data || [];
+    } catch (error) {
+      console.error("Error fetching questions for export:", error);
+      toast.error("Erreur lors de la récupération des questions");
+      return;
+    }
 
     // Créer un mapping question_id -> texte pour les en-têtes
     const questionMap = new Map(relevantQuestions.map(q => [q.id, q.question_text]));
