@@ -314,9 +314,10 @@ export default function SurveyEditor() {
             </CardHeader>
 
             {/* Options for choice questions */}
-            {needsOptions(question.question_type) && (
+            {typeNeedsOptions(question.question_type) && (
               <CardContent className="pt-2">
                 <div className="space-y-2 ml-10">
+                  <Label className="text-xs text-muted-foreground uppercase tracking-wide">Options</Label>
                   {question.options.map((option, optIndex) => (
                     <div key={optIndex} className="flex items-center gap-2">
                       <div className="w-4 h-4 rounded-full border-2 border-muted-foreground/30" />
@@ -348,6 +349,30 @@ export default function SurveyEditor() {
                     Ajouter une option
                   </Button>
                 </div>
+
+                {/* Matrix rows */}
+                {typeNeedsMatrixRows(question.question_type) && (
+                  <div className="space-y-2 ml-10 mt-4">
+                    <Label className="text-xs text-muted-foreground uppercase tracking-wide">Lignes de la matrice</Label>
+                    {(question.matrix_rows || []).map((row, rowIndex) => (
+                      <div key={rowIndex} className="flex items-center gap-2">
+                        <Badge variant="outline" className="text-xs">{rowIndex + 1}</Badge>
+                        <Input
+                          value={row}
+                          onChange={(e) => handleUpdateMatrixRow(index, rowIndex, e.target.value)}
+                          className="flex-1"
+                        />
+                        <Button variant="ghost" size="icon" onClick={() => handleDeleteMatrixRow(index, rowIndex)}>
+                          <Trash2 className="h-3 w-3" />
+                        </Button>
+                      </div>
+                    ))}
+                    <Button variant="ghost" size="sm" className="ml-6" onClick={() => handleAddMatrixRow(index)}>
+                      <Plus className="h-4 w-4 mr-1" />
+                      Ajouter une ligne
+                    </Button>
+                  </div>
+                )}
               </CardContent>
             )}
           </Card>
