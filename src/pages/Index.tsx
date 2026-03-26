@@ -202,7 +202,7 @@ export default function Index() {
           <div className="flex flex-col md:flex-row items-center justify-between gap-4">
             <Logo size="sm" variant="full" />
             <p className="text-sm text-muted-foreground">
-              © {new Date().getFullYear()} WASWIA. Application de collecte de données terrain.
+              © {new Date().getFullYear()} WASWIA - CAC International Bank Comores. Application de collecte de données terrain.
             </p>
           </div>
         </div>
