@@ -410,6 +410,21 @@ export default function SurveyorsPage() {
                       <DropdownMenuItem
                         onClick={() => {
                           setSelectedSurveyor(surveyor);
+                          setEditData({
+                            first_name: surveyor.profile.first_name || "",
+                            last_name: surveyor.profile.last_name || "",
+                            email: surveyor.profile.email,
+                            phone: (surveyor.profile as any).phone || "",
+                          });
+                          setIsEditDialogOpen(true);
+                        }}
+                      >
+                        <Pencil className="h-4 w-4 mr-2" />
+                        Modifier
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setSelectedSurveyor(surveyor);
                           setIsAssignDialogOpen(true);
                         }}
                       >
