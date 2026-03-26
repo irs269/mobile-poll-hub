@@ -94,8 +94,10 @@ export default function SurveyorsPage() {
     last_name: "",
   });
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editData, setEditData] = useState({ first_name: "", last_name: "", email: "", phone: "" });
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const handleCreateSurveyor = async () => {
     if (!newSurveyor.email || !newSurveyor.password) {
