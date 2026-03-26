@@ -25,8 +25,20 @@ import {
   Download, 
   MapPin,
   Clock,
-  FileCheck
+  FileCheck,
+  Trash2
 } from "lucide-react";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { toast } from "sonner";
 import { format } from "date-fns";
 import { fr } from "date-fns/locale";
@@ -64,6 +76,7 @@ export default function ResponsesPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSurveyId, setSelectedSurveyId] = useState<string>("all");
+  const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
     fetchResponses();
@@ -263,6 +276,24 @@ export default function ResponsesPage() {
     });
   };
 
+  const handleDeleteResponse = async (id: string) => {
+    setDeleting(true);
+    try {
+      const { error } = await supabase
+        .from("survey_responses")
+        .delete()
+        .eq("id", id);
+      if (error) throw error;
+      setResponses((prev) => prev.filter((r) => r.id !== id));
+      toast.success("Réponse supprimée");
+    } catch (error) {
+      console.error("Error deleting response:", error);
+      toast.error("Erreur lors de la suppression");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const filteredResponses = getFilteredResponses();
 
   return (
@@ -336,6 +367,7 @@ export default function ResponsesPage() {
                   <TableHead>Date</TableHead>
                   <TableHead>GPS</TableHead>
                   <TableHead>Statut</TableHead>
+                  <TableHead className="w-[60px]"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -371,6 +403,33 @@ export default function ResponsesPage() {
                       <Badge variant={response.completed_at ? "default" : "secondary"}>
                         {response.completed_at ? "Terminé" : "En cours"}
                       </Badge>
+                    </TableCell>
+                    <TableCell>
+                      <AlertDialog>
+                        <AlertDialogTrigger asChild>
+                          <Button variant="ghost" size="icon-sm" className="text-destructive hover:text-destructive">
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </AlertDialogTrigger>
+                        <AlertDialogContent>
+                          <AlertDialogHeader>
+                            <AlertDialogTitle>Supprimer cette réponse ?</AlertDialogTitle>
+                            <AlertDialogDescription>
+                              Cette action est irréversible. La réponse sera définitivement supprimée.
+                            </AlertDialogDescription>
+                          </AlertDialogHeader>
+                          <AlertDialogFooter>
+                            <AlertDialogCancel>Annuler</AlertDialogCancel>
+                            <AlertDialogAction
+                              onClick={() => handleDeleteResponse(response.id)}
+                              className="bg-destructive text-destructive-foreground hover:bg-destructive/90"
+                              disabled={deleting}
+                            >
+                              Supprimer
+                            </AlertDialogAction>
+                          </AlertDialogFooter>
+                        </AlertDialogContent>
+                      </AlertDialog>
                     </TableCell>
                   </TableRow>
                 ))}
