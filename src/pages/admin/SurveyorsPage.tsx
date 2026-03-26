@@ -94,8 +94,10 @@ export default function SurveyorsPage() {
     last_name: "",
   });
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [isDeleteDialogOpen, setIsDeleteDialogOpen] = useState(false);
   const [editData, setEditData] = useState({ first_name: "", last_name: "", email: "", phone: "" });
   const [saving, setSaving] = useState(false);
+  const [deleting, setDeleting] = useState(false);
 
   const handleCreateSurveyor = async () => {
     if (!newSurveyor.email || !newSurveyor.password) {
@@ -431,6 +433,16 @@ export default function SurveyorsPage() {
                         <ClipboardList className="h-4 w-4 mr-2" />
                         Assigner un sondage
                       </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="text-destructive focus:text-destructive"
+                        onClick={() => {
+                          setSelectedSurveyor(surveyor);
+                          setIsDeleteDialogOpen(true);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Supprimer
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
@@ -439,6 +451,63 @@ export default function SurveyorsPage() {
           ))}
         </div>
       )}
+
+      {/* Delete Surveyor Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Supprimer l'enquêteur</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir supprimer{" "}
+              <strong>{selectedSurveyor?.profile.first_name || selectedSurveyor?.profile.email}</strong> ?
+              Cette action est irréversible et supprimera également toutes ses assignations.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+              Annuler
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={deleting}
+              onClick={async () => {
+                if (!selectedSurveyor) return;
+                setDeleting(true);
+                try {
+                  const { data: { session } } = await supabase.auth.getSession();
+                  if (!session) {
+                    toast.error("Session expirée");
+                    return;
+                  }
+                  const response = await fetch(
+                    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-surveyor`,
+                    {
+                      method: "POST",
+                      headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${session.access_token}`,
+                      },
+                      body: JSON.stringify({ surveyor_id: selectedSurveyor.id }),
+                    }
+                  );
+                  const result = await response.json();
+                  if (!response.ok) throw new Error(result.error);
+                  toast.success("Enquêteur supprimé avec succès");
+                  setIsDeleteDialogOpen(false);
+                  fetchSurveyors();
+                } catch (error: any) {
+                  console.error("Error deleting surveyor:", error);
+                  toast.error(error.message || "Erreur lors de la suppression");
+                } finally {
+                  setDeleting(false);
+                }
+              }}
+            >
+              {deleting ? "Suppression..." : "Supprimer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
 
       {/* Assign Dialog */}
       <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
