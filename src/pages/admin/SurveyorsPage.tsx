@@ -433,6 +433,16 @@ export default function SurveyorsPage() {
                         <ClipboardList className="h-4 w-4 mr-2" />
                         Assigner un sondage
                       </DropdownMenuItem>
+                      <DropdownMenuItem
+                        className="text-destructive focus:text-destructive"
+                        onClick={() => {
+                          setSelectedSurveyor(surveyor);
+                          setIsDeleteDialogOpen(true);
+                        }}
+                      >
+                        <Trash2 className="h-4 w-4 mr-2" />
+                        Supprimer
+                      </DropdownMenuItem>
                     </DropdownMenuContent>
                   </DropdownMenu>
                 </div>
