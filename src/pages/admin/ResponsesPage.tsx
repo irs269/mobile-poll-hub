@@ -431,6 +431,7 @@ export default function ResponsesPage() {
                         </AlertDialogContent>
                       </AlertDialog>
                     </TableCell>
+                  </TableRow>
                 ))}
               </TableBody>
             </Table>
