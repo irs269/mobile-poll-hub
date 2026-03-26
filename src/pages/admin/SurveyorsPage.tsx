@@ -452,6 +452,63 @@ export default function SurveyorsPage() {
         </div>
       )}
 
+      {/* Delete Surveyor Dialog */}
+      <Dialog open={isDeleteDialogOpen} onOpenChange={setIsDeleteDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Supprimer l'enquêteur</DialogTitle>
+            <DialogDescription>
+              Êtes-vous sûr de vouloir supprimer{" "}
+              <strong>{selectedSurveyor?.profile.first_name || selectedSurveyor?.profile.email}</strong> ?
+              Cette action est irréversible et supprimera également toutes ses assignations.
+            </DialogDescription>
+          </DialogHeader>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsDeleteDialogOpen(false)}>
+              Annuler
+            </Button>
+            <Button
+              variant="destructive"
+              disabled={deleting}
+              onClick={async () => {
+                if (!selectedSurveyor) return;
+                setDeleting(true);
+                try {
+                  const { data: { session } } = await supabase.auth.getSession();
+                  if (!session) {
+                    toast.error("Session expirée");
+                    return;
+                  }
+                  const response = await fetch(
+                    `${import.meta.env.VITE_SUPABASE_URL}/functions/v1/delete-surveyor`,
+                    {
+                      method: "POST",
+                      headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Bearer ${session.access_token}`,
+                      },
+                      body: JSON.stringify({ surveyor_id: selectedSurveyor.id }),
+                    }
+                  );
+                  const result = await response.json();
+                  if (!response.ok) throw new Error(result.error);
+                  toast.success("Enquêteur supprimé avec succès");
+                  setIsDeleteDialogOpen(false);
+                  fetchSurveyors();
+                } catch (error: any) {
+                  console.error("Error deleting surveyor:", error);
+                  toast.error(error.message || "Erreur lors de la suppression");
+                } finally {
+                  setDeleting(false);
+                }
+              }}
+            >
+              {deleting ? "Suppression..." : "Supprimer"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
       {/* Assign Dialog */}
       <Dialog open={isAssignDialogOpen} onOpenChange={setIsAssignDialogOpen}>
         <DialogContent>
