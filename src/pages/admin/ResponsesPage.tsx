@@ -276,6 +276,24 @@ export default function ResponsesPage() {
     });
   };
 
+  const handleDeleteResponse = async (id: string) => {
+    setDeleting(true);
+    try {
+      const { error } = await supabase
+        .from("survey_responses")
+        .delete()
+        .eq("id", id);
+      if (error) throw error;
+      setResponses((prev) => prev.filter((r) => r.id !== id));
+      toast.success("Réponse supprimée");
+    } catch (error) {
+      console.error("Error deleting response:", error);
+      toast.error("Erreur lors de la suppression");
+    } finally {
+      setDeleting(false);
+    }
+  };
+
   const filteredResponses = getFilteredResponses();
 
   return (
