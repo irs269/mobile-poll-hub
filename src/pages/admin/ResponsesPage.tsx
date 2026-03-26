@@ -367,6 +367,7 @@ export default function ResponsesPage() {
                   <TableHead>Date</TableHead>
                   <TableHead>GPS</TableHead>
                   <TableHead>Statut</TableHead>
+                  <TableHead className="w-[60px]"></TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
