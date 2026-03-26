@@ -12,7 +12,8 @@ import {
   MoreVertical,
   ClipboardList,
   Trash2,
-  Eye
+  Eye,
+  Pencil
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -92,6 +93,9 @@ export default function SurveyorsPage() {
     first_name: "",
     last_name: "",
   });
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [editData, setEditData] = useState({ first_name: "", last_name: "", email: "", phone: "" });
+  const [saving, setSaving] = useState(false);
 
   const handleCreateSurveyor = async () => {
     if (!newSurveyor.email || !newSurveyor.password) {
@@ -406,6 +410,21 @@ export default function SurveyorsPage() {
                       <DropdownMenuItem
                         onClick={() => {
                           setSelectedSurveyor(surveyor);
+                          setEditData({
+                            first_name: surveyor.profile.first_name || "",
+                            last_name: surveyor.profile.last_name || "",
+                            email: surveyor.profile.email,
+                            phone: (surveyor.profile as any).phone || "",
+                          });
+                          setIsEditDialogOpen(true);
+                        }}
+                      >
+                        <Pencil className="h-4 w-4 mr-2" />
+                        Modifier
+                      </DropdownMenuItem>
+                      <DropdownMenuItem
+                        onClick={() => {
+                          setSelectedSurveyor(surveyor);
                           setIsAssignDialogOpen(true);
                         }}
                       >
@@ -521,6 +540,96 @@ export default function SurveyorsPage() {
               disabled={creating}
             >
               {creating ? "Création..." : "Créer l'enquêteur"}
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* Edit Surveyor Dialog */}
+      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle>Modifier l'enquêteur</DialogTitle>
+            <DialogDescription>
+              Modifiez les informations de {selectedSurveyor?.profile.first_name || selectedSurveyor?.profile.email}
+            </DialogDescription>
+          </DialogHeader>
+          <div className="space-y-4 py-4">
+            <div className="grid grid-cols-2 gap-4">
+              <div>
+                <Label htmlFor="edit_first_name">Prénom</Label>
+                <Input
+                  id="edit_first_name"
+                  value={editData.first_name}
+                  onChange={(e) => setEditData({ ...editData, first_name: e.target.value })}
+                  className="mt-1"
+                />
+              </div>
+              <div>
+                <Label htmlFor="edit_last_name">Nom</Label>
+                <Input
+                  id="edit_last_name"
+                  value={editData.last_name}
+                  onChange={(e) => setEditData({ ...editData, last_name: e.target.value })}
+                  className="mt-1"
+                />
+              </div>
+            </div>
+            <div>
+              <Label htmlFor="edit_email">Email</Label>
+              <Input
+                id="edit_email"
+                type="email"
+                value={editData.email}
+                onChange={(e) => setEditData({ ...editData, email: e.target.value })}
+                className="mt-1"
+              />
+            </div>
+            <div>
+              <Label htmlFor="edit_phone">Téléphone</Label>
+              <Input
+                id="edit_phone"
+                type="tel"
+                value={editData.phone}
+                onChange={(e) => setEditData({ ...editData, phone: e.target.value })}
+                className="mt-1"
+              />
+            </div>
+          </div>
+          <DialogFooter>
+            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
+              Annuler
+            </Button>
+            <Button
+              className="gradient-primary"
+              onClick={async () => {
+                if (!selectedSurveyor) return;
+                setSaving(true);
+                try {
+                  const { error } = await supabase
+                    .from("profiles")
+                    .update({
+                      first_name: editData.first_name || null,
+                      last_name: editData.last_name || null,
+                      email: editData.email,
+                      phone: editData.phone || null,
+                    })
+                    .eq("id", selectedSurveyor.id);
+
+                  if (error) throw error;
+                  toast.success("Informations mises à jour");
+                  setIsEditDialogOpen(false);
+                  fetchSurveyors();
+                } catch (error: any) {
+                  console.error("Error updating surveyor:", error);
+                  toast.error("Erreur lors de la mise à jour");
+                } finally {
+                  setSaving(false);
+                }
+              }}
+              disabled={saving}
+            >
+              {saving ? "Enregistrement..." : "Enregistrer"}
             </Button>
           </DialogFooter>
         </DialogContent>
