@@ -12,7 +12,8 @@ import {
   MoreVertical,
   ClipboardList,
   Trash2,
-  Eye
+  Eye,
+  Pencil
 } from "lucide-react";
 import {
   DropdownMenu,
