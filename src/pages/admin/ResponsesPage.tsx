@@ -288,7 +288,12 @@ export default function ResponsesPage() {
         searchQuery === "" ||
         r.survey?.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         r.surveyor?.email.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchesSurvey && matchesSurveyor && matchesSearch;
+      
+      const responseDate = r.completed_at ? new Date(r.completed_at) : r.started_at ? new Date(r.started_at) : null;
+      const matchesDateFrom = !dateFrom || (responseDate && responseDate >= dateFrom);
+      const matchesDateTo = !dateTo || (responseDate && responseDate <= new Date(dateTo.getTime() + 86400000 - 1));
+      
+      return matchesSurvey && matchesSurveyor && matchesSearch && matchesDateFrom && matchesDateTo;
     });
   };
 
