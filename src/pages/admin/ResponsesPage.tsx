@@ -89,6 +89,7 @@ export default function ResponsesPage() {
     fetchResponses();
     fetchSurveys();
     fetchQuestions();
+    fetchAllSurveyors();
   }, []);
 
   const fetchResponses = async () => {
