@@ -69,10 +69,16 @@ interface SurveyQuestion {
   survey_id: string;
 }
 
+interface Surveyor {
+  id: string;
+  name: string;
+}
+
 export default function ResponsesPage() {
   const [responses, setResponses] = useState<SurveyResponse[]>([]);
   const [surveys, setSurveys] = useState<Survey[]>([]);
   const [questions, setQuestions] = useState<SurveyQuestion[]>([]);
+  const [allSurveyors, setAllSurveyors] = useState<Surveyor[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSurveyId, setSelectedSurveyId] = useState<string>("all");
@@ -83,6 +89,7 @@ export default function ResponsesPage() {
     fetchResponses();
     fetchSurveys();
     fetchQuestions();
+    fetchAllSurveyors();
   }, []);
 
   const fetchResponses = async () => {
@@ -278,14 +285,31 @@ export default function ResponsesPage() {
     });
   };
 
-  // Get unique surveyors from responses
-  const uniqueSurveyors = Array.from(
-    new Map(
-      responses
-        .filter(r => r.surveyor)
-        .map(r => [r.surveyor_id, r.surveyor!])
-    ).entries()
-  ).map(([id, s]) => ({ id: id!, name: s.first_name && s.last_name ? `${s.first_name} ${s.last_name}` : s.email }));
+  const fetchAllSurveyors = async () => {
+    try {
+      const { data: roles } = await supabase
+        .from("user_roles")
+        .select("user_id")
+        .eq("role", "surveyor");
+      
+      if (roles && roles.length > 0) {
+        const ids = roles.map(r => r.user_id);
+        const { data: profiles } = await supabase
+          .from("profiles")
+          .select("id, email, first_name, last_name")
+          .in("id", ids);
+        
+        if (profiles) {
+          setAllSurveyors(profiles.map(p => ({
+            id: p.id,
+            name: p.first_name && p.last_name ? `${p.first_name} ${p.last_name}` : p.email,
+          })));
+        }
+      }
+    } catch (error) {
+      console.error("Error fetching surveyors:", error);
+    }
+  };
 
   // Count per surveyor
   const surveyorResponseCount = (surveyorId: string) =>
@@ -357,7 +381,7 @@ export default function ResponsesPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tous les enquêteurs</SelectItem>
-            {uniqueSurveyors.map((s) => (
+            {allSurveyors.map((s) => (
               <SelectItem key={s.id} value={s.id}>
                 {s.name} ({surveyorResponseCount(s.id)})
               </SelectItem>
