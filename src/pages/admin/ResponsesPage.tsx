@@ -381,7 +381,7 @@ export default function ResponsesPage() {
           </SelectTrigger>
           <SelectContent>
             <SelectItem value="all">Tous les enquêteurs</SelectItem>
-            {uniqueSurveyors.map((s) => (
+            {allSurveyors.map((s) => (
               <SelectItem key={s.id} value={s.id}>
                 {s.name} ({surveyorResponseCount(s.id)})
               </SelectItem>
