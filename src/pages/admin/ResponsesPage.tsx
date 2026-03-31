@@ -351,6 +351,19 @@ export default function ResponsesPage() {
             ))}
           </SelectContent>
         </Select>
+        <Select value={selectedSurveyorId} onValueChange={setSelectedSurveyorId}>
+          <SelectTrigger className="w-[250px]">
+            <SelectValue placeholder="Tous les enquêteurs" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tous les enquêteurs</SelectItem>
+            {uniqueSurveyors.map((s) => (
+              <SelectItem key={s.id} value={s.id}>
+                {s.name} ({surveyorResponseCount(s.id)})
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
       </div>
 
       {/* Responses Table */}
