@@ -269,13 +269,27 @@ export default function ResponsesPage() {
   const getFilteredResponses = () => {
     return responses.filter((r) => {
       const matchesSurvey = selectedSurveyId === "all" || r.survey_id === selectedSurveyId;
+      const matchesSurveyor = selectedSurveyorId === "all" || r.surveyor_id === selectedSurveyorId;
       const matchesSearch =
         searchQuery === "" ||
         r.survey?.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         r.surveyor?.email.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchesSurvey && matchesSearch;
+      return matchesSurvey && matchesSurveyor && matchesSearch;
     });
   };
+
+  // Get unique surveyors from responses
+  const uniqueSurveyors = Array.from(
+    new Map(
+      responses
+        .filter(r => r.surveyor)
+        .map(r => [r.surveyor_id, r.surveyor!])
+    ).entries()
+  ).map(([id, s]) => ({ id: id!, name: s.first_name && s.last_name ? `${s.first_name} ${s.last_name}` : s.email }));
+
+  // Count per surveyor
+  const surveyorResponseCount = (surveyorId: string) =>
+    responses.filter(r => r.surveyor_id === surveyorId).length;
 
   const handleDeleteResponse = async (id: string) => {
     setDeleting(true);
