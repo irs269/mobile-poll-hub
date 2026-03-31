@@ -76,6 +76,7 @@ export default function ResponsesPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSurveyId, setSelectedSurveyId] = useState<string>("all");
+  const [selectedSurveyorId, setSelectedSurveyorId] = useState<string>("all");
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
@@ -268,13 +269,27 @@ export default function ResponsesPage() {
   const getFilteredResponses = () => {
     return responses.filter((r) => {
       const matchesSurvey = selectedSurveyId === "all" || r.survey_id === selectedSurveyId;
+      const matchesSurveyor = selectedSurveyorId === "all" || r.surveyor_id === selectedSurveyorId;
       const matchesSearch =
         searchQuery === "" ||
         r.survey?.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
         r.surveyor?.email.toLowerCase().includes(searchQuery.toLowerCase());
-      return matchesSurvey && matchesSearch;
+      return matchesSurvey && matchesSurveyor && matchesSearch;
     });
   };
+
+  // Get unique surveyors from responses
+  const uniqueSurveyors = Array.from(
+    new Map(
+      responses
+        .filter(r => r.surveyor)
+        .map(r => [r.surveyor_id, r.surveyor!])
+    ).entries()
+  ).map(([id, s]) => ({ id: id!, name: s.first_name && s.last_name ? `${s.first_name} ${s.last_name}` : s.email }));
+
+  // Count per surveyor
+  const surveyorResponseCount = (surveyorId: string) =>
+    responses.filter(r => r.surveyor_id === surveyorId).length;
 
   const handleDeleteResponse = async (id: string) => {
     setDeleting(true);
@@ -332,6 +347,19 @@ export default function ResponsesPage() {
             {surveys.map((survey) => (
               <SelectItem key={survey.id} value={survey.id}>
                 {survey.title}
+              </SelectItem>
+            ))}
+          </SelectContent>
+        </Select>
+        <Select value={selectedSurveyorId} onValueChange={setSelectedSurveyorId}>
+          <SelectTrigger className="w-[250px]">
+            <SelectValue placeholder="Tous les enquêteurs" />
+          </SelectTrigger>
+          <SelectContent>
+            <SelectItem value="all">Tous les enquêteurs</SelectItem>
+            {uniqueSurveyors.map((s) => (
+              <SelectItem key={s.id} value={s.id}>
+                {s.name} ({surveyorResponseCount(s.id)})
               </SelectItem>
             ))}
           </SelectContent>
