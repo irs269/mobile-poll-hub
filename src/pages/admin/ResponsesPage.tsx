@@ -78,6 +78,7 @@ export default function ResponsesPage() {
   const [responses, setResponses] = useState<SurveyResponse[]>([]);
   const [surveys, setSurveys] = useState<Survey[]>([]);
   const [questions, setQuestions] = useState<SurveyQuestion[]>([]);
+  const [allSurveyors, setAllSurveyors] = useState<Surveyor[]>([]);
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSurveyId, setSelectedSurveyId] = useState<string>("all");
