@@ -364,42 +364,73 @@ export default function ResponsesPage() {
       </div>
 
       {/* Filters */}
-      <div className="flex flex-col sm:flex-row gap-4">
-        <div className="relative flex-1 max-w-md">
-          <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
-          <Input
-            placeholder="Rechercher..."
-            value={searchQuery}
-            onChange={(e) => setSearchQuery(e.target.value)}
-            className="pl-10"
-          />
+      <div className="flex flex-col gap-4">
+        <div className="flex flex-col sm:flex-row gap-4">
+          <div className="relative flex-1 max-w-md">
+            <Search className="absolute left-3 top-1/2 -translate-y-1/2 h-4 w-4 text-muted-foreground" />
+            <Input
+              placeholder="Rechercher..."
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              className="pl-10"
+            />
+          </div>
+          <Select value={selectedSurveyId} onValueChange={setSelectedSurveyId}>
+            <SelectTrigger className="w-[200px]">
+              <SelectValue placeholder="Tous les sondages" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous les sondages</SelectItem>
+              {surveys.map((survey) => (
+                <SelectItem key={survey.id} value={survey.id}>
+                  {survey.title}
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
+          <Select value={selectedSurveyorId} onValueChange={setSelectedSurveyorId}>
+            <SelectTrigger className="w-[250px]">
+              <SelectValue placeholder="Tous les enquêteurs" />
+            </SelectTrigger>
+            <SelectContent>
+              <SelectItem value="all">Tous les enquêteurs</SelectItem>
+              {allSurveyors.map((s) => (
+                <SelectItem key={s.id} value={s.id}>
+                  {s.name} ({surveyorResponseCount(s.id)})
+                </SelectItem>
+              ))}
+            </SelectContent>
+          </Select>
         </div>
-        <Select value={selectedSurveyId} onValueChange={setSelectedSurveyId}>
-          <SelectTrigger className="w-[200px]">
-            <SelectValue placeholder="Tous les sondages" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tous les sondages</SelectItem>
-            {surveys.map((survey) => (
-              <SelectItem key={survey.id} value={survey.id}>
-                {survey.title}
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
-        <Select value={selectedSurveyorId} onValueChange={setSelectedSurveyorId}>
-          <SelectTrigger className="w-[250px]">
-            <SelectValue placeholder="Tous les enquêteurs" />
-          </SelectTrigger>
-          <SelectContent>
-            <SelectItem value="all">Tous les enquêteurs</SelectItem>
-            {allSurveyors.map((s) => (
-              <SelectItem key={s.id} value={s.id}>
-                {s.name} ({surveyorResponseCount(s.id)})
-              </SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className={cn("w-[180px] justify-start text-left font-normal", !dateFrom && "text-muted-foreground")}>
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {dateFrom ? format(dateFrom, "dd/MM/yyyy", { locale: fr }) : "Date début"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar mode="single" selected={dateFrom} onSelect={setDateFrom} initialFocus className={cn("p-3 pointer-events-auto")} />
+            </PopoverContent>
+          </Popover>
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline" className={cn("w-[180px] justify-start text-left font-normal", !dateTo && "text-muted-foreground")}>
+                <CalendarIcon className="mr-2 h-4 w-4" />
+                {dateTo ? format(dateTo, "dd/MM/yyyy", { locale: fr }) : "Date fin"}
+              </Button>
+            </PopoverTrigger>
+            <PopoverContent className="w-auto p-0" align="start">
+              <Calendar mode="single" selected={dateTo} onSelect={setDateTo} initialFocus className={cn("p-3 pointer-events-auto")} />
+            </PopoverContent>
+          </Popover>
+          {(dateFrom || dateTo) && (
+            <Button variant="ghost" size="sm" onClick={() => { setDateFrom(undefined); setDateTo(undefined); }}>
+              <X className="h-4 w-4 mr-1" /> Effacer dates
+            </Button>
+          )}
+        </div>
       </div>
 
       {/* Responses Table */}
