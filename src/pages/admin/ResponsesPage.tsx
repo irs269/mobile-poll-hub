@@ -69,6 +69,11 @@ interface SurveyQuestion {
   survey_id: string;
 }
 
+interface Surveyor {
+  id: string;
+  name: string;
+}
+
 export default function ResponsesPage() {
   const [responses, setResponses] = useState<SurveyResponse[]>([]);
   const [surveys, setSurveys] = useState<Survey[]>([]);
