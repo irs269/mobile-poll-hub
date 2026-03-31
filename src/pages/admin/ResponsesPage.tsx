@@ -76,6 +76,7 @@ export default function ResponsesPage() {
   const [loading, setLoading] = useState(true);
   const [searchQuery, setSearchQuery] = useState("");
   const [selectedSurveyId, setSelectedSurveyId] = useState<string>("all");
+  const [selectedSurveyorId, setSelectedSurveyorId] = useState<string>("all");
   const [deleting, setDeleting] = useState(false);
 
   useEffect(() => {
