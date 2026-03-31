@@ -29,7 +29,9 @@ import {
   MapPin,
   Clock,
   FileCheck,
-  Trash2
+  Trash2,
+  CalendarIcon,
+  X
 } from "lucide-react";
 import {
   AlertDialog,
