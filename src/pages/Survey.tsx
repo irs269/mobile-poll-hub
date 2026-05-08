@@ -372,7 +372,20 @@ export default function SurveyPage() {
       </header>
 
       {/* Question */}
-      <main className="flex-1 container px-4 py-6">
+      <main className="flex-1 container px-4 py-6 space-y-4">
+        {(() => {
+          const sec = currentQuestion?.section_id ? sections.find((s) => s.id === currentQuestion.section_id) : null;
+          if (!sec) return null;
+          return (
+            <Card className="border-2 border-primary/30 bg-primary/5 shadow-sm">
+              <CardHeader className="py-3">
+                <Badge variant="secondary" className="w-fit mb-1">Partie</Badge>
+                <CardTitle className="text-base">{sec.title}</CardTitle>
+                {sec.description && <p className="text-sm text-muted-foreground mt-1">{sec.description}</p>}
+              </CardHeader>
+            </Card>
+          );
+        })()}
         <Card className="border-0 shadow-lg animate-slide-up">
           <CardHeader className="pb-4">
             <div className="flex items-start gap-3">
