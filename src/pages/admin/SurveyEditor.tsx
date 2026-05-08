@@ -164,6 +164,7 @@ export default function SurveyEditor() {
           question_type: q.question_type,
           options: q.options.length > 0 ? q.options : null,
           is_required: q.is_required,
+          allow_other: q.allow_other,
           order_index: index,
           skip_logic: q.skip_logic,
         }));
