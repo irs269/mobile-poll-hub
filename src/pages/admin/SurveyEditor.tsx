@@ -32,6 +32,7 @@ interface Question {
   question_type: string;
   options: string[];
   is_required: boolean;
+  allow_other: boolean;
   order_index: number;
   skip_logic: null;
   matrix_rows?: string[];
