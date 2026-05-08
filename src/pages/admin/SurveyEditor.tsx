@@ -229,13 +229,14 @@ export default function SurveyEditor() {
           description: s.description || null,
           order_index: idx,
         }));
-        const { data: inserted, error } = await supabase
-          .from("survey_sections" as never)
+        const { data: inserted, error } = await (supabase
+          .from("survey_sections" as never) as unknown as {
+            insert: (rows: unknown) => { select: (cols: string) => Promise<{ data: { id: string; title: string; order_index: number }[] | null; error: unknown }> };
+          })
           .insert(toInsert)
           .select("id, title, order_index");
         if (error) throw error;
-        const insertedTyped = (inserted as { id: string; title: string; order_index: number }[]) || [];
-        // Map by order_index (since titles may repeat)
+        const insertedTyped = inserted || [];
         sections.forEach((s, idx) => {
           const match = insertedTyped.find((row) => row.order_index === idx);
           if (match) localToDb.set(s.id, match.id);
