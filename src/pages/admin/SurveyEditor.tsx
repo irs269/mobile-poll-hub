@@ -106,6 +106,7 @@ export default function SurveyEditor() {
       question_type: "single_choice",
       options: ["Option 1", "Option 2"],
       is_required: true,
+      allow_other: false,
       order_index: questions.length,
       skip_logic: null,
     };
