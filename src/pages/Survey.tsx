@@ -58,6 +58,7 @@ export default function SurveyPage() {
 
   const [survey, setSurvey] = useState<Survey | null>(null);
   const [questions, setQuestions] = useState<SurveyQuestion[]>([]);
+  const [sections, setSections] = useState<SurveySection[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [responses, setResponses] = useState<Record<string, unknown>>({});
   const [loading, setLoading] = useState(true);
