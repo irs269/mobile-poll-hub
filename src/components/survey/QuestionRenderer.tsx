@@ -24,7 +24,11 @@ interface QuestionRendererProps {
   onChange: (value: unknown) => void;
   onMultipleChoice?: (option: string, checked: boolean) => void;
   matrixRows?: string[];
+  allowOther?: boolean;
 }
+
+const OTHER_PREFIX = "__other__:";
+const OTHER_LABEL = "Autre (à préciser)";
 
 export function QuestionRenderer({
   questionId,
@@ -34,22 +38,45 @@ export function QuestionRenderer({
   onChange,
   onMultipleChoice,
   matrixRows,
+  allowOther,
 }: QuestionRendererProps) {
   const id = questionId;
 
   switch (questionType) {
     // ===== BASIC =====
-    case "single_choice":
+    case "single_choice": {
+      const strVal = (value as string) || "";
+      const isOther = strVal.startsWith(OTHER_PREFIX);
+      const otherText = isOther ? strVal.slice(OTHER_PREFIX.length) : "";
+      const radioVal = isOther ? "__other__" : strVal;
       return (
-        <RadioGroup value={value as string} onValueChange={(val) => onChange(val)} className="space-y-3">
+        <RadioGroup value={radioVal} onValueChange={(val) => onChange(val === "__other__" ? OTHER_PREFIX : val)} className="space-y-3">
           {options?.map((option, i) => (
             <div key={i} className="flex items-center space-x-3 p-4 rounded-lg border-2 border-muted hover:border-primary/30 transition-colors cursor-pointer" onClick={() => onChange(option)}>
               <RadioGroupItem value={option} id={`${id}-${i}`} />
               <Label htmlFor={`${id}-${i}`} className="flex-1 cursor-pointer font-medium">{option}</Label>
             </div>
           ))}
+          {allowOther && (
+            <div className={`p-4 rounded-lg border-2 transition-colors ${isOther ? "border-primary bg-primary/5" : "border-muted hover:border-primary/30"}`}>
+              <div className="flex items-center space-x-3 cursor-pointer" onClick={() => onChange(OTHER_PREFIX + otherText)}>
+                <RadioGroupItem value="__other__" id={`${id}-other`} />
+                <Label htmlFor={`${id}-other`} className="flex-1 cursor-pointer font-medium">{OTHER_LABEL}</Label>
+              </div>
+              {isOther && (
+                <Input
+                  autoFocus
+                  value={otherText}
+                  onChange={(e) => onChange(OTHER_PREFIX + e.target.value)}
+                  placeholder="Précisez votre réponse..."
+                  className="mt-3"
+                />
+              )}
+            </div>
+          )}
         </RadioGroup>
       );
+    }
 
     case "multiple_choice":
       return (
