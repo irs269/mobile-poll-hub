@@ -300,39 +300,78 @@ export function QuestionRenderer({
       );
 
     // ===== UX =====
-    case "buttons":
+    case "buttons": {
+      const strVal = (value as string) || "";
+      const isOther = strVal.startsWith(OTHER_PREFIX);
+      const otherText = isOther ? strVal.slice(OTHER_PREFIX.length) : "";
       return (
-        <div className="flex flex-wrap gap-3">
-          {options?.map((option, i) => {
-            const selected = value === option;
-            return (
+        <div className="space-y-3">
+          <div className="flex flex-wrap gap-3">
+            {options?.map((option, i) => {
+              const selected = strVal === option;
+              return (
+                <Button
+                  key={i}
+                  type="button"
+                  variant={selected ? "default" : "outline"}
+                  className={`px-6 py-3 text-base ${selected ? "shadow-md" : ""}`}
+                  onClick={() => onChange(option)}
+                >
+                  {option}
+                </Button>
+              );
+            })}
+            {allowOther && (
               <Button
-                key={i}
                 type="button"
-                variant={selected ? "default" : "outline"}
-                className={`px-6 py-3 text-base ${selected ? "shadow-md" : ""}`}
-                onClick={() => onChange(option)}
+                variant={isOther ? "default" : "outline"}
+                className={`px-6 py-3 text-base ${isOther ? "shadow-md" : ""}`}
+                onClick={() => onChange(OTHER_PREFIX + otherText)}
               >
-                {option}
+                {OTHER_LABEL}
               </Button>
-            );
-          })}
+            )}
+          </div>
+          {allowOther && isOther && (
+            <Input
+              autoFocus
+              value={otherText}
+              onChange={(e) => onChange(OTHER_PREFIX + e.target.value)}
+              placeholder="Précisez votre réponse..."
+            />
+          )}
         </div>
       );
+    }
 
-    case "dropdown":
+    case "dropdown": {
+      const strVal = (value as string) || "";
+      const isOther = strVal.startsWith(OTHER_PREFIX);
+      const otherText = isOther ? strVal.slice(OTHER_PREFIX.length) : "";
       return (
-        <Select value={(value as string) || ""} onValueChange={(val) => onChange(val)}>
-          <SelectTrigger className="h-12 text-base">
-            <SelectValue placeholder="Sélectionnez une option..." />
-          </SelectTrigger>
-          <SelectContent>
-            {options?.map((option, i) => (
-              <SelectItem key={i} value={option}>{option}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="space-y-3">
+          <Select value={isOther ? "__other__" : strVal} onValueChange={(val) => onChange(val === "__other__" ? OTHER_PREFIX : val)}>
+            <SelectTrigger className="h-12 text-base">
+              <SelectValue placeholder="Sélectionnez une option..." />
+            </SelectTrigger>
+            <SelectContent>
+              {options?.map((option, i) => (
+                <SelectItem key={i} value={option}>{option}</SelectItem>
+              ))}
+              {allowOther && <SelectItem value="__other__">{OTHER_LABEL}</SelectItem>}
+            </SelectContent>
+          </Select>
+          {allowOther && isOther && (
+            <Input
+              autoFocus
+              value={otherText}
+              onChange={(e) => onChange(OTHER_PREFIX + e.target.value)}
+              placeholder="Précisez votre réponse..."
+            />
+          )}
+        </div>
       );
+    }
 
     case "autocomplete":
       return <AutocompleteInput options={options || []} value={(value as string) || ""} onChange={(v) => onChange(v)} />;
