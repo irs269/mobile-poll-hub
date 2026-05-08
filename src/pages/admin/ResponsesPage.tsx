@@ -190,27 +190,33 @@ export default function ResponsesPage() {
 
     // Fetch questions directly to avoid stale state
     const surveyIds = [...new Set(filteredData.map(r => r.survey_id))];
-    
-    let relevantQuestions: SurveyQuestion[] = [];
+
+    let relevantQuestions: (SurveyQuestion & { section_id?: string | null })[] = [];
+    let sectionMap = new Map<string, string>();
     try {
       const { data, error } = await supabase
         .from("survey_questions")
-        .select("id, question_text, question_type, order_index, survey_id")
+        .select("id, question_text, question_type, order_index, survey_id, section_id")
         .in("survey_id", surveyIds)
         .order("order_index");
-      
+
       if (error) throw error;
-      relevantQuestions = data || [];
+      relevantQuestions = (data as (SurveyQuestion & { section_id?: string | null })[]) || [];
+
+      const { data: secs } = await (supabase
+        .from("survey_sections" as never) as unknown as {
+          select: (cols: string) => { in: (col: string, vals: string[]) => Promise<{ data: { id: string; title: string }[] | null }> };
+        })
+        .select("id, title")
+        .in("survey_id", surveyIds);
+      sectionMap = new Map((secs || []).map((s) => [s.id, s.title]));
     } catch (error) {
       console.error("Error fetching questions for export:", error);
       toast.error("Erreur lors de la récupération des questions");
       return;
     }
 
-    // Créer un mapping question_id -> texte pour les en-têtes
-    const questionMap = new Map(relevantQuestions.map(q => [q.id, q.question_text]));
-
-    // En-têtes: métadonnées + questions
+    // En-têtes: métadonnées + questions (préfixées par leur section)
     const headers = [
       "ID Réponse",
       "Sondage",
@@ -224,7 +230,10 @@ export default function ResponsesPage() {
       "GPS Fin (Lat)",
       "GPS Fin (Lon)",
       "Statut",
-      ...relevantQuestions.map(q => q.question_text),
+      ...relevantQuestions.map((q) => {
+        const secTitle = q.section_id ? sectionMap.get(q.section_id) : null;
+        return secTitle ? `[${secTitle}] ${q.question_text}` : q.question_text;
+      }),
     ];
 
     const rows = filteredData.map((r) => {
@@ -239,11 +248,13 @@ export default function ResponsesPage() {
         : "";
 
       // Extraire les réponses pour chaque question
+      const formatOther = (v: string) => v.startsWith("__other__:") ? `Autre: ${v.slice(10)}` : v;
       const questionResponses = relevantQuestions.map(q => {
         const answer = r.responses[q.id];
         if (answer === undefined || answer === null) return "";
-        if (Array.isArray(answer)) return answer.join("; ");
+        if (Array.isArray(answer)) return answer.map((v) => typeof v === "string" ? formatOther(v) : String(v)).join("; ");
         if (typeof answer === "object") return JSON.stringify(answer);
+        if (typeof answer === "string") return formatOther(answer);
         return String(answer);
       });
 

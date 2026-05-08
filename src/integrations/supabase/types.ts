@@ -86,6 +86,7 @@ export type Database = {
           order_index: number
           question_text: string
           question_type: string
+          section_id: string | null
           skip_logic: Json | null
           survey_id: string
         }
@@ -98,6 +99,7 @@ export type Database = {
           order_index: number
           question_text: string
           question_type: string
+          section_id?: string | null
           skip_logic?: Json | null
           survey_id: string
         }
@@ -110,10 +112,18 @@ export type Database = {
           order_index?: number
           question_text?: string
           question_type?: string
+          section_id?: string | null
           skip_logic?: Json | null
           survey_id?: string
         }
         Relationships: [
+          {
+            foreignKeyName: "survey_questions_section_id_fkey"
+            columns: ["section_id"]
+            isOneToOne: false
+            referencedRelation: "survey_sections"
+            referencedColumns: ["id"]
+          },
           {
             foreignKeyName: "survey_questions_survey_id_fkey"
             columns: ["survey_id"]
@@ -160,6 +170,41 @@ export type Database = {
         Relationships: [
           {
             foreignKeyName: "survey_responses_survey_id_fkey"
+            columns: ["survey_id"]
+            isOneToOne: false
+            referencedRelation: "surveys"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      survey_sections: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          order_index: number
+          survey_id: string
+          title: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          order_index?: number
+          survey_id: string
+          title: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          order_index?: number
+          survey_id?: string
+          title?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "survey_sections_survey_id_fkey"
             columns: ["survey_id"]
             isOneToOne: false
             referencedRelation: "surveys"

@@ -27,6 +27,15 @@ interface SurveyQuestion {
   is_required: boolean;
   order_index: number;
   skip_logic: { condition: string; target_question: number } | null;
+  section_id?: string | null;
+  allow_other?: boolean;
+}
+
+interface SurveySection {
+  id: string;
+  title: string;
+  description: string | null;
+  order_index: number;
 }
 
 interface Survey {
@@ -49,6 +58,7 @@ export default function SurveyPage() {
 
   const [survey, setSurvey] = useState<Survey | null>(null);
   const [questions, setQuestions] = useState<SurveyQuestion[]>([]);
+  const [sections, setSections] = useState<SurveySection[]>([]);
   const [currentIndex, setCurrentIndex] = useState(0);
   const [responses, setResponses] = useState<Record<string, unknown>>({});
   const [loading, setLoading] = useState(true);
@@ -111,7 +121,18 @@ export default function SurveyPage() {
           ...q,
           options: q.options as string[] | null,
           skip_logic: q.skip_logic as { condition: string; target_question: number } | null,
+          section_id: (q as { section_id?: string | null }).section_id ?? null,
+          allow_other: (q as { allow_other?: boolean }).allow_other ?? false,
         })));
+
+        const { data: sectionsData } = await (supabase
+          .from("survey_sections" as never) as unknown as {
+            select: (cols: string) => { eq: (col: string, val: string) => { order: (col: string, opts: { ascending: boolean }) => Promise<{ data: SurveySection[] | null }> } };
+          })
+          .select("*")
+          .eq("survey_id", surveyId!)
+          .order("order_index", { ascending: true });
+        setSections(sectionsData || []);
       } else {
         await loadOfflineSurvey();
       }
@@ -351,7 +372,20 @@ export default function SurveyPage() {
       </header>
 
       {/* Question */}
-      <main className="flex-1 container px-4 py-6">
+      <main className="flex-1 container px-4 py-6 space-y-4">
+        {(() => {
+          const sec = currentQuestion?.section_id ? sections.find((s) => s.id === currentQuestion.section_id) : null;
+          if (!sec) return null;
+          return (
+            <Card className="border-2 border-primary/30 bg-primary/5 shadow-sm">
+              <CardHeader className="py-3">
+                <Badge variant="secondary" className="w-fit mb-1">Partie</Badge>
+                <CardTitle className="text-base">{sec.title}</CardTitle>
+                {sec.description && <p className="text-sm text-muted-foreground mt-1">{sec.description}</p>}
+              </CardHeader>
+            </Card>
+          );
+        })()}
         <Card className="border-0 shadow-lg animate-slide-up">
           <CardHeader className="pb-4">
             <div className="flex items-start gap-3">
