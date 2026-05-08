@@ -277,6 +277,7 @@ export default function SurveyPage() {
   const renderQuestion = () => {
     if (!currentQuestion) return null;
     const { id, question_type, options } = currentQuestion;
+    const allowOther = (currentQuestion as { allow_other?: boolean }).allow_other ?? false;
     return (
       <QuestionRenderer
         questionId={id}
@@ -285,6 +286,7 @@ export default function SurveyPage() {
         value={responses[id]}
         onChange={(val) => handleResponseChange(id, val)}
         onMultipleChoice={(option, checked) => handleMultipleChoice(id, option, checked)}
+        allowOther={allowOther}
       />
     );
   };

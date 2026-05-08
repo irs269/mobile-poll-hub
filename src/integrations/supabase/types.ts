@@ -78,6 +78,7 @@ export type Database = {
       }
       survey_questions: {
         Row: {
+          allow_other: boolean
           created_at: string | null
           id: string
           is_required: boolean | null
@@ -89,6 +90,7 @@ export type Database = {
           survey_id: string
         }
         Insert: {
+          allow_other?: boolean
           created_at?: string | null
           id?: string
           is_required?: boolean | null
@@ -100,6 +102,7 @@ export type Database = {
           survey_id: string
         }
         Update: {
+          allow_other?: boolean
           created_at?: string | null
           id?: string
           is_required?: boolean | null

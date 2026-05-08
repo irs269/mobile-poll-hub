@@ -32,6 +32,7 @@ interface Question {
   question_type: string;
   options: string[];
   is_required: boolean;
+  allow_other: boolean;
   order_index: number;
   skip_logic: null;
   matrix_rows?: string[];
@@ -84,6 +85,7 @@ export default function SurveyEditor() {
         question_type: q.question_type,
         options: (q.options as string[]) || [],
         is_required: q.is_required,
+        allow_other: (q as { allow_other?: boolean }).allow_other ?? false,
         order_index: q.order_index,
         skip_logic: null,
       }));
@@ -104,6 +106,7 @@ export default function SurveyEditor() {
       question_type: "single_choice",
       options: ["Option 1", "Option 2"],
       is_required: true,
+      allow_other: false,
       order_index: questions.length,
       skip_logic: null,
     };
@@ -161,6 +164,7 @@ export default function SurveyEditor() {
           question_type: q.question_type,
           options: q.options.length > 0 ? q.options : null,
           is_required: q.is_required,
+          allow_other: q.allow_other,
           order_index: index,
           skip_logic: q.skip_logic,
         }));
@@ -348,6 +352,18 @@ export default function SurveyEditor() {
                     <Plus className="h-4 w-4 mr-1" />
                     Ajouter une option
                   </Button>
+                  <div className="flex items-center gap-2 pt-2 ml-6">
+                    <Switch
+                      id={`other-${index}`}
+                      checked={question.allow_other}
+                      onCheckedChange={(checked) =>
+                        handleUpdateQuestion(index, { allow_other: checked })
+                      }
+                    />
+                    <Label htmlFor={`other-${index}`} className="text-sm">
+                      Ajouter une option « Autre (à préciser) »
+                    </Label>
+                  </div>
                 </div>
 
                 {/* Matrix rows */}

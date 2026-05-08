@@ -24,7 +24,11 @@ interface QuestionRendererProps {
   onChange: (value: unknown) => void;
   onMultipleChoice?: (option: string, checked: boolean) => void;
   matrixRows?: string[];
+  allowOther?: boolean;
 }
+
+const OTHER_PREFIX = "__other__:";
+const OTHER_LABEL = "Autre (à préciser)";
 
 export function QuestionRenderer({
   questionId,
@@ -34,28 +38,55 @@ export function QuestionRenderer({
   onChange,
   onMultipleChoice,
   matrixRows,
+  allowOther,
 }: QuestionRendererProps) {
   const id = questionId;
 
   switch (questionType) {
     // ===== BASIC =====
-    case "single_choice":
+    case "single_choice": {
+      const strVal = (value as string) || "";
+      const isOther = strVal.startsWith(OTHER_PREFIX);
+      const otherText = isOther ? strVal.slice(OTHER_PREFIX.length) : "";
+      const radioVal = isOther ? "__other__" : strVal;
       return (
-        <RadioGroup value={value as string} onValueChange={(val) => onChange(val)} className="space-y-3">
+        <RadioGroup value={radioVal} onValueChange={(val) => onChange(val === "__other__" ? OTHER_PREFIX : val)} className="space-y-3">
           {options?.map((option, i) => (
             <div key={i} className="flex items-center space-x-3 p-4 rounded-lg border-2 border-muted hover:border-primary/30 transition-colors cursor-pointer" onClick={() => onChange(option)}>
               <RadioGroupItem value={option} id={`${id}-${i}`} />
               <Label htmlFor={`${id}-${i}`} className="flex-1 cursor-pointer font-medium">{option}</Label>
             </div>
           ))}
+          {allowOther && (
+            <div className={`p-4 rounded-lg border-2 transition-colors ${isOther ? "border-primary bg-primary/5" : "border-muted hover:border-primary/30"}`}>
+              <div className="flex items-center space-x-3 cursor-pointer" onClick={() => onChange(OTHER_PREFIX + otherText)}>
+                <RadioGroupItem value="__other__" id={`${id}-other`} />
+                <Label htmlFor={`${id}-other`} className="flex-1 cursor-pointer font-medium">{OTHER_LABEL}</Label>
+              </div>
+              {isOther && (
+                <Input
+                  autoFocus
+                  value={otherText}
+                  onChange={(e) => onChange(OTHER_PREFIX + e.target.value)}
+                  placeholder="Précisez votre réponse..."
+                  className="mt-3"
+                />
+              )}
+            </div>
+          )}
         </RadioGroup>
       );
+    }
 
-    case "multiple_choice":
+    case "multiple_choice": {
+      const arr = (value as string[]) || [];
+      const otherEntry = arr.find((v) => v.startsWith(OTHER_PREFIX));
+      const otherChecked = !!otherEntry;
+      const otherText = otherEntry ? otherEntry.slice(OTHER_PREFIX.length) : "";
       return (
         <div className="space-y-3">
           {options?.map((option, i) => {
-            const checked = ((value as string[]) || []).includes(option);
+            const checked = arr.includes(option);
             return (
               <div key={i} className={`flex items-center space-x-3 p-4 rounded-lg border-2 transition-colors cursor-pointer ${checked ? "border-primary bg-primary/5" : "border-muted hover:border-primary/30"}`} onClick={() => onMultipleChoice?.(option, !checked)}>
                 <Checkbox checked={checked} onCheckedChange={(c) => onMultipleChoice?.(option, c as boolean)} id={`${id}-${i}`} />
@@ -63,8 +94,34 @@ export function QuestionRenderer({
               </div>
             );
           })}
+          {allowOther && (
+            <div className={`p-4 rounded-lg border-2 transition-colors ${otherChecked ? "border-primary bg-primary/5" : "border-muted hover:border-primary/30"}`}>
+              <div className="flex items-center space-x-3 cursor-pointer" onClick={() => {
+                const next = arr.filter((v) => !v.startsWith(OTHER_PREFIX));
+                if (!otherChecked) next.push(OTHER_PREFIX + "");
+                onChange(next);
+              }}>
+                <Checkbox checked={otherChecked} id={`${id}-other`} />
+                <Label htmlFor={`${id}-other`} className="flex-1 cursor-pointer font-medium">{OTHER_LABEL}</Label>
+              </div>
+              {otherChecked && (
+                <Input
+                  autoFocus
+                  value={otherText}
+                  onChange={(e) => {
+                    const next = arr.filter((v) => !v.startsWith(OTHER_PREFIX));
+                    next.push(OTHER_PREFIX + e.target.value);
+                    onChange(next);
+                  }}
+                  placeholder="Précisez votre réponse..."
+                  className="mt-3"
+                />
+              )}
+            </div>
+          )}
         </div>
       );
+    }
 
     case "text_short":
       return <Input value={(value as string) || ""} onChange={(e) => onChange(e.target.value)} placeholder="Votre réponse..." className="text-base h-12" />;
@@ -243,39 +300,78 @@ export function QuestionRenderer({
       );
 
     // ===== UX =====
-    case "buttons":
+    case "buttons": {
+      const strVal = (value as string) || "";
+      const isOther = strVal.startsWith(OTHER_PREFIX);
+      const otherText = isOther ? strVal.slice(OTHER_PREFIX.length) : "";
       return (
-        <div className="flex flex-wrap gap-3">
-          {options?.map((option, i) => {
-            const selected = value === option;
-            return (
+        <div className="space-y-3">
+          <div className="flex flex-wrap gap-3">
+            {options?.map((option, i) => {
+              const selected = strVal === option;
+              return (
+                <Button
+                  key={i}
+                  type="button"
+                  variant={selected ? "default" : "outline"}
+                  className={`px-6 py-3 text-base ${selected ? "shadow-md" : ""}`}
+                  onClick={() => onChange(option)}
+                >
+                  {option}
+                </Button>
+              );
+            })}
+            {allowOther && (
               <Button
-                key={i}
                 type="button"
-                variant={selected ? "default" : "outline"}
-                className={`px-6 py-3 text-base ${selected ? "shadow-md" : ""}`}
-                onClick={() => onChange(option)}
+                variant={isOther ? "default" : "outline"}
+                className={`px-6 py-3 text-base ${isOther ? "shadow-md" : ""}`}
+                onClick={() => onChange(OTHER_PREFIX + otherText)}
               >
-                {option}
+                {OTHER_LABEL}
               </Button>
-            );
-          })}
+            )}
+          </div>
+          {allowOther && isOther && (
+            <Input
+              autoFocus
+              value={otherText}
+              onChange={(e) => onChange(OTHER_PREFIX + e.target.value)}
+              placeholder="Précisez votre réponse..."
+            />
+          )}
         </div>
       );
+    }
 
-    case "dropdown":
+    case "dropdown": {
+      const strVal = (value as string) || "";
+      const isOther = strVal.startsWith(OTHER_PREFIX);
+      const otherText = isOther ? strVal.slice(OTHER_PREFIX.length) : "";
       return (
-        <Select value={(value as string) || ""} onValueChange={(val) => onChange(val)}>
-          <SelectTrigger className="h-12 text-base">
-            <SelectValue placeholder="Sélectionnez une option..." />
-          </SelectTrigger>
-          <SelectContent>
-            {options?.map((option, i) => (
-              <SelectItem key={i} value={option}>{option}</SelectItem>
-            ))}
-          </SelectContent>
-        </Select>
+        <div className="space-y-3">
+          <Select value={isOther ? "__other__" : strVal} onValueChange={(val) => onChange(val === "__other__" ? OTHER_PREFIX : val)}>
+            <SelectTrigger className="h-12 text-base">
+              <SelectValue placeholder="Sélectionnez une option..." />
+            </SelectTrigger>
+            <SelectContent>
+              {options?.map((option, i) => (
+                <SelectItem key={i} value={option}>{option}</SelectItem>
+              ))}
+              {allowOther && <SelectItem value="__other__">{OTHER_LABEL}</SelectItem>}
+            </SelectContent>
+          </Select>
+          {allowOther && isOther && (
+            <Input
+              autoFocus
+              value={otherText}
+              onChange={(e) => onChange(OTHER_PREFIX + e.target.value)}
+              placeholder="Précisez votre réponse..."
+            />
+          )}
+        </div>
       );
+    }
 
     case "autocomplete":
       return <AutocompleteInput options={options || []} value={(value as string) || ""} onChange={(v) => onChange(v)} />;
