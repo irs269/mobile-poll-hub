@@ -352,6 +352,18 @@ export default function SurveyEditor() {
                     <Plus className="h-4 w-4 mr-1" />
                     Ajouter une option
                   </Button>
+                  <div className="flex items-center gap-2 pt-2 ml-6">
+                    <Switch
+                      id={`other-${index}`}
+                      checked={question.allow_other}
+                      onCheckedChange={(checked) =>
+                        handleUpdateQuestion(index, { allow_other: checked })
+                      }
+                    />
+                    <Label htmlFor={`other-${index}`} className="text-sm">
+                      Ajouter une option « Autre (à préciser) »
+                    </Label>
+                  </div>
                 </div>
 
                 {/* Matrix rows */}
