@@ -248,11 +248,13 @@ export default function ResponsesPage() {
         : "";
 
       // Extraire les réponses pour chaque question
+      const formatOther = (v: string) => v.startsWith("__other__:") ? `Autre: ${v.slice(10)}` : v;
       const questionResponses = relevantQuestions.map(q => {
         const answer = r.responses[q.id];
         if (answer === undefined || answer === null) return "";
-        if (Array.isArray(answer)) return answer.join("; ");
+        if (Array.isArray(answer)) return answer.map((v) => typeof v === "string" ? formatOther(v) : String(v)).join("; ");
         if (typeof answer === "object") return JSON.stringify(answer);
+        if (typeof answer === "string") return formatOther(answer);
         return String(answer);
       });
 
