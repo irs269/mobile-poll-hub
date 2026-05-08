@@ -121,7 +121,18 @@ export default function SurveyPage() {
           ...q,
           options: q.options as string[] | null,
           skip_logic: q.skip_logic as { condition: string; target_question: number } | null,
+          section_id: (q as { section_id?: string | null }).section_id ?? null,
+          allow_other: (q as { allow_other?: boolean }).allow_other ?? false,
         })));
+
+        const { data: sectionsData } = await (supabase
+          .from("survey_sections" as never) as unknown as {
+            select: (cols: string) => { eq: (col: string, val: string) => { order: (col: string, opts: { ascending: boolean }) => Promise<{ data: SurveySection[] | null }> } };
+          })
+          .select("*")
+          .eq("survey_id", surveyId!)
+          .order("order_index", { ascending: true });
+        setSections(sectionsData || []);
       } else {
         await loadOfflineSurvey();
       }
