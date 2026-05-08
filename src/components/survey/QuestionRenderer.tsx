@@ -78,11 +78,15 @@ export function QuestionRenderer({
       );
     }
 
-    case "multiple_choice":
+    case "multiple_choice": {
+      const arr = (value as string[]) || [];
+      const otherEntry = arr.find((v) => v.startsWith(OTHER_PREFIX));
+      const otherChecked = !!otherEntry;
+      const otherText = otherEntry ? otherEntry.slice(OTHER_PREFIX.length) : "";
       return (
         <div className="space-y-3">
           {options?.map((option, i) => {
-            const checked = ((value as string[]) || []).includes(option);
+            const checked = arr.includes(option);
             return (
               <div key={i} className={`flex items-center space-x-3 p-4 rounded-lg border-2 transition-colors cursor-pointer ${checked ? "border-primary bg-primary/5" : "border-muted hover:border-primary/30"}`} onClick={() => onMultipleChoice?.(option, !checked)}>
                 <Checkbox checked={checked} onCheckedChange={(c) => onMultipleChoice?.(option, c as boolean)} id={`${id}-${i}`} />
@@ -90,8 +94,34 @@ export function QuestionRenderer({
               </div>
             );
           })}
+          {allowOther && (
+            <div className={`p-4 rounded-lg border-2 transition-colors ${otherChecked ? "border-primary bg-primary/5" : "border-muted hover:border-primary/30"}`}>
+              <div className="flex items-center space-x-3 cursor-pointer" onClick={() => {
+                const next = arr.filter((v) => !v.startsWith(OTHER_PREFIX));
+                if (!otherChecked) next.push(OTHER_PREFIX + "");
+                onChange(next);
+              }}>
+                <Checkbox checked={otherChecked} id={`${id}-other`} />
+                <Label htmlFor={`${id}-other`} className="flex-1 cursor-pointer font-medium">{OTHER_LABEL}</Label>
+              </div>
+              {otherChecked && (
+                <Input
+                  autoFocus
+                  value={otherText}
+                  onChange={(e) => {
+                    const next = arr.filter((v) => !v.startsWith(OTHER_PREFIX));
+                    next.push(OTHER_PREFIX + e.target.value);
+                    onChange(next);
+                  }}
+                  placeholder="Précisez votre réponse..."
+                  className="mt-3"
+                />
+              )}
+            </div>
+          )}
         </div>
       );
+    }
 
     case "text_short":
       return <Input value={(value as string) || ""} onChange={(e) => onChange(e.target.value)} placeholder="Votre réponse..." className="text-base h-12" />;
