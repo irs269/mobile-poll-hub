@@ -85,6 +85,7 @@ export default function SurveyEditor() {
         question_type: q.question_type,
         options: (q.options as string[]) || [],
         is_required: q.is_required,
+        allow_other: (q as { allow_other?: boolean }).allow_other ?? false,
         order_index: q.order_index,
         skip_logic: null,
       }));
