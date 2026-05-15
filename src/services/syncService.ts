@@ -2,6 +2,7 @@ import { supabase } from "@/integrations/supabase/client";
 import {
   saveSurveysOffline,
   saveQuestionsOffline,
+  saveSectionsOffline,
   getPendingResponses,
   markResponseSynced,
   setLastSyncTime,
