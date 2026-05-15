@@ -16,6 +16,16 @@ interface OfflineQuestion {
   is_required: boolean;
   order_index: number;
   skip_logic: { condition: string; target_question: number } | null;
+  section_id?: string | null;
+  allow_other?: boolean;
+}
+
+interface OfflineSection {
+  id: string;
+  survey_id: string;
+  title: string;
+  description: string | null;
+  order_index: number;
 }
 
 export interface PendingResponse {
@@ -41,6 +51,11 @@ interface WaswiaDB extends DBSchema {
     value: OfflineQuestion;
     indexes: { "by-survey": string };
   };
+  sections: {
+    key: string;
+    value: OfflineSection;
+    indexes: { "by-survey": string };
+  };
   pending_responses: {
     key: string;
     value: PendingResponse;
@@ -53,7 +68,7 @@ interface WaswiaDB extends DBSchema {
 }
 
 const DB_NAME = "waswia-offline";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 let dbInstance: IDBPDatabase<WaswiaDB> | null = null;
 
@@ -68,6 +83,10 @@ async function getDB(): Promise<IDBPDatabase<WaswiaDB>> {
       if (!db.objectStoreNames.contains("questions")) {
         const qStore = db.createObjectStore("questions", { keyPath: "id" });
         qStore.createIndex("by-survey", "survey_id");
+      }
+      if (!db.objectStoreNames.contains("sections")) {
+        const sStore = db.createObjectStore("sections", { keyPath: "id" });
+        sStore.createIndex("by-survey", "survey_id");
       }
       if (!db.objectStoreNames.contains("pending_responses")) {
         const rStore = db.createObjectStore("pending_responses", { keyPath: "localId" });
@@ -116,6 +135,21 @@ export async function saveQuestionsOffline(questions: OfflineQuestion[]): Promis
 export async function getOfflineQuestions(surveyId: string): Promise<OfflineQuestion[]> {
   const db = await getDB();
   return db.getAllFromIndex("questions", "by-survey", surveyId);
+}
+
+// === Sections ===
+export async function saveSectionsOffline(sections: OfflineSection[]): Promise<void> {
+  const db = await getDB();
+  const tx = db.transaction("sections", "readwrite");
+  await Promise.all([
+    ...sections.map((s) => tx.store.put(s)),
+    tx.done,
+  ]);
+}
+
+export async function getOfflineSections(surveyId: string): Promise<OfflineSection[]> {
+  const db = await getDB();
+  return db.getAllFromIndex("sections", "by-survey", surveyId);
 }
 
 // === Pending Responses ===

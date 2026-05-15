@@ -17,7 +17,7 @@ import {
   Loader2,
   WifiOff
 } from "lucide-react";
-import { getOfflineSurvey, getOfflineQuestions, savePendingResponse } from "@/services/offlineStorage";
+import { getOfflineSurvey, getOfflineQuestions, getOfflineSections, savePendingResponse } from "@/services/offlineStorage";
 
 interface SurveyQuestion {
   id: string;
@@ -159,6 +159,9 @@ export default function SurveyPage() {
       const offlineQuestions = await getOfflineQuestions(surveyId);
       const sorted = offlineQuestions.sort((a, b) => a.order_index - b.order_index);
       setQuestions(sorted);
+
+      const offlineSections = await getOfflineSections(surveyId);
+      setSections(offlineSections.sort((a, b) => a.order_index - b.order_index));
     } catch (error) {
       console.error("Error loading offline survey:", error);
       toast.error("Erreur de chargement hors ligne");
