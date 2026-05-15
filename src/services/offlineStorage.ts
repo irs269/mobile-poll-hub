@@ -137,6 +137,21 @@ export async function getOfflineQuestions(surveyId: string): Promise<OfflineQues
   return db.getAllFromIndex("questions", "by-survey", surveyId);
 }
 
+// === Sections ===
+export async function saveSectionsOffline(sections: OfflineSection[]): Promise<void> {
+  const db = await getDB();
+  const tx = db.transaction("sections", "readwrite");
+  await Promise.all([
+    ...sections.map((s) => tx.store.put(s)),
+    tx.done,
+  ]);
+}
+
+export async function getOfflineSections(surveyId: string): Promise<OfflineSection[]> {
+  const db = await getDB();
+  return db.getAllFromIndex("sections", "by-survey", surveyId);
+}
+
 // === Pending Responses ===
 export async function savePendingResponse(response: PendingResponse): Promise<void> {
   const db = await getDB();
