@@ -51,6 +51,11 @@ interface WaswiaDB extends DBSchema {
     value: OfflineQuestion;
     indexes: { "by-survey": string };
   };
+  sections: {
+    key: string;
+    value: OfflineSection;
+    indexes: { "by-survey": string };
+  };
   pending_responses: {
     key: string;
     value: PendingResponse;
@@ -63,7 +68,7 @@ interface WaswiaDB extends DBSchema {
 }
 
 const DB_NAME = "waswia-offline";
-const DB_VERSION = 1;
+const DB_VERSION = 2;
 
 let dbInstance: IDBPDatabase<WaswiaDB> | null = null;
 
@@ -78,6 +83,10 @@ async function getDB(): Promise<IDBPDatabase<WaswiaDB>> {
       if (!db.objectStoreNames.contains("questions")) {
         const qStore = db.createObjectStore("questions", { keyPath: "id" });
         qStore.createIndex("by-survey", "survey_id");
+      }
+      if (!db.objectStoreNames.contains("sections")) {
+        const sStore = db.createObjectStore("sections", { keyPath: "id" });
+        sStore.createIndex("by-survey", "survey_id");
       }
       if (!db.objectStoreNames.contains("pending_responses")) {
         const rStore = db.createObjectStore("pending_responses", { keyPath: "localId" });
