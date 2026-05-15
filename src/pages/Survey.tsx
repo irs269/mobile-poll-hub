@@ -17,7 +17,7 @@ import {
   Loader2,
   WifiOff
 } from "lucide-react";
-import { getOfflineSurvey, getOfflineQuestions, savePendingResponse } from "@/services/offlineStorage";
+import { getOfflineSurvey, getOfflineQuestions, getOfflineSections, savePendingResponse } from "@/services/offlineStorage";
 
 interface SurveyQuestion {
   id: string;
