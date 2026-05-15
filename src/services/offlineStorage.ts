@@ -16,6 +16,16 @@ interface OfflineQuestion {
   is_required: boolean;
   order_index: number;
   skip_logic: { condition: string; target_question: number } | null;
+  section_id?: string | null;
+  allow_other?: boolean;
+}
+
+interface OfflineSection {
+  id: string;
+  survey_id: string;
+  title: string;
+  description: string | null;
+  order_index: number;
 }
 
 export interface PendingResponse {
