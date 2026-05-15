@@ -99,7 +99,7 @@ export async function syncAll(userId: string, roles: string[]): Promise<SyncResu
 
       if (qError) throw qError;
 
-      const typedQuestions = (questions || []).map(q => ({
+      const typedQuestions = (questions || []).map((q: any) => ({
         id: q.id,
         survey_id: q.survey_id,
         question_text: q.question_text,
@@ -108,10 +108,32 @@ export async function syncAll(userId: string, roles: string[]): Promise<SyncResu
         is_required: q.is_required ?? true,
         order_index: q.order_index,
         skip_logic: q.skip_logic as { condition: string; target_question: number } | null,
+        section_id: q.section_id ?? null,
+        allow_other: q.allow_other ?? false,
       }));
 
       await saveQuestionsOffline(typedQuestions);
       result.questionsDownloaded = typedQuestions.length;
+
+      // 4. Download sections
+      try {
+        const { data: sections } = await (supabase
+          .from("survey_sections" as never) as unknown as {
+            select: (cols: string) => { in: (col: string, vals: string[]) => { order: (col: string, opts: { ascending: boolean }) => Promise<{ data: any[] | null }> } };
+          })
+          .select("*")
+          .in("survey_id", surveyIds)
+          .order("order_index", { ascending: true });
+        await saveSectionsOffline((sections || []).map((s: any) => ({
+          id: s.id,
+          survey_id: s.survey_id,
+          title: s.title,
+          description: s.description ?? null,
+          order_index: s.order_index ?? 0,
+        })));
+      } catch (e) {
+        // sections optional
+      }
     }
   } catch (err) {
     result.errors.push(`Erreur téléchargement sondages: ${String(err)}`);
