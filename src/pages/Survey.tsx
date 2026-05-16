@@ -260,14 +260,15 @@ export default function SurveyPage() {
     }
 
     setSubmitting(true);
-    await captureGps("end");
+    const endCoords = await captureGps("end");
+    const finalGpsEnd = endCoords || gpsEnd;
 
     const responseData = {
       survey_id: surveyId!,
       surveyor_id: user?.id || "",
       responses: JSON.parse(JSON.stringify(responses)),
       gps_start: gpsStart ? JSON.parse(JSON.stringify(gpsStart)) : null,
-      gps_end: gpsEnd ? JSON.parse(JSON.stringify(gpsEnd)) : null,
+      gps_end: finalGpsEnd ? JSON.parse(JSON.stringify(finalGpsEnd)) : null,
       started_at: new Date(gpsStart?.timestamp || Date.now()).toISOString(),
       completed_at: new Date().toISOString(),
     };
