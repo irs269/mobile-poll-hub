@@ -168,30 +168,37 @@ export default function SurveyPage() {
     }
   };
 
-  const captureGps = async (type: "start" | "end") => {
-    if (!navigator.geolocation) return;
-
-    setGpsLoading(true);
-    
-    navigator.geolocation.getCurrentPosition(
-      (position) => {
-        const coords: GpsCoords = {
-          latitude: position.coords.latitude,
-          longitude: position.coords.longitude,
-          accuracy: position.coords.accuracy,
-          timestamp: position.timestamp,
-        };
-        
-        if (type === "start") {
-          setGpsStart(coords);
-        } else {
-          setGpsEnd(coords);
-        }
-        setGpsLoading(false);
-      },
-      () => setGpsLoading(false),
-      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-    );
+  const captureGps = (type: "start" | "end"): Promise<GpsCoords | null> => {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) {
+        resolve(null);
+        return;
+      }
+      setGpsLoading(true);
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const coords: GpsCoords = {
+            latitude: position.coords.latitude,
+            longitude: position.coords.longitude,
+            accuracy: position.coords.accuracy,
+            timestamp: position.timestamp,
+          };
+          if (type === "start") {
+            setGpsStart(coords);
+          } else {
+            setGpsEnd(coords);
+          }
+          setGpsLoading(false);
+          resolve(coords);
+        },
+        (err) => {
+          console.error("GPS error:", err);
+          setGpsLoading(false);
+          resolve(null);
+        },
+        { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
+      );
+    });
   };
 
   const visibleQuestions = useMemo(() => {
@@ -253,14 +260,15 @@ export default function SurveyPage() {
     }
 
     setSubmitting(true);
-    await captureGps("end");
+    const endCoords = await captureGps("end");
+    const finalGpsEnd = endCoords || gpsEnd;
 
     const responseData = {
       survey_id: surveyId!,
       surveyor_id: user?.id || "",
       responses: JSON.parse(JSON.stringify(responses)),
       gps_start: gpsStart ? JSON.parse(JSON.stringify(gpsStart)) : null,
-      gps_end: gpsEnd ? JSON.parse(JSON.stringify(gpsEnd)) : null,
+      gps_end: finalGpsEnd ? JSON.parse(JSON.stringify(finalGpsEnd)) : null,
       started_at: new Date(gpsStart?.timestamp || Date.now()).toISOString(),
       completed_at: new Date().toISOString(),
     };
