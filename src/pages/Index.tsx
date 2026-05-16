@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
+import { DemoSlides } from "@/components/DemoSlides";
 import { 
   Smartphone, 
   MapPin, 
@@ -173,6 +174,9 @@ export default function Index() {
           </div>
         </div>
       </section>
+
+      {/* Demo Slides Section */}
+      <DemoSlides />
 
       {/* Question Types Section */}
       <section className="py-20 bg-muted/30">
