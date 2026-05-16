@@ -3,6 +3,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "@/hooks/useAuth";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
+import { DemoSlides } from "@/components/DemoSlides";
 import { 
   Smartphone, 
   MapPin, 
