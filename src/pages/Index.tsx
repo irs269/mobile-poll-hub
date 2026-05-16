@@ -102,6 +102,34 @@ export default function Index() {
                 Se connecter
               </Button>
             </div>
+
+            {/* Play Store Badge */}
+            <div className="mt-10 flex flex-col items-center gap-3 animate-slide-up" style={{ animationDelay: "0.3s" }}>
+              <p className="text-sm text-primary-foreground/80 font-medium">
+                Application mobile disponible sur
+              </p>
+              <a
+                href="https://play.google.com/store"
+                target="_blank"
+                rel="noopener noreferrer"
+                className="inline-flex items-center gap-3 px-6 py-3 rounded-xl bg-black/80 hover:bg-black border border-white/20 transition-all hover:scale-105 shadow-lg"
+                aria-label="Télécharger sur Google Play Store"
+              >
+                <svg viewBox="0 0 512 512" className="h-9 w-9" xmlns="http://www.w3.org/2000/svg">
+                  <path fill="#34A853" d="M325.3 234.3L104.6 13l280.8 161.2z"/>
+                  <path fill="#FBBC04" d="M104.6 13l220.7 221.3-220.7 221.3z"/>
+                  <path fill="#EA4335" d="M385.4 174.2L104.6 13l220.7 221.3z"/>
+                  <path fill="#4285F4" d="M104.6 455.6l280.8-161.2-60.1-60.1z"/>
+                </svg>
+                <div className="flex flex-col items-start leading-tight">
+                  <span className="text-[10px] text-white/80 uppercase tracking-wide">Disponible sur</span>
+                  <span className="text-lg font-semibold text-white">Google Play</span>
+                </div>
+              </a>
+              <p className="text-xs text-primary-foreground/70 max-w-md text-center mt-2">
+                Bientôt disponible — solution complète pour vos campagnes d'enquêtes terrain.
+              </p>
+            </div>
           </div>
         </div>
 
