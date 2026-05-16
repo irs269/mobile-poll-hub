@@ -175,6 +175,9 @@ export default function Index() {
         </div>
       </section>
 
+      {/* Demo Slides Section */}
+      <DemoSlides />
+
       {/* Question Types Section */}
       <section className="py-20 bg-muted/30">
         <div className="container px-4">
