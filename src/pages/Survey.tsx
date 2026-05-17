@@ -14,6 +14,7 @@ import {
   ArrowRight, 
   Check, 
   MapPin, 
+  MapPinOff,
   Loader2,
   WifiOff
 } from "lucide-react";
