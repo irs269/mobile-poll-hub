@@ -390,10 +390,23 @@ export default function SurveyPage() {
                 Hors ligne
               </Badge>
             )}
-            {gpsStart && (
-              <div className="flex items-center gap-1 text-success text-xs">
+            {gpsStatus === "loading" && (
+              <Badge variant="outline" className="gap-1 border-primary/40 text-primary">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                GPS…
+              </Badge>
+            )}
+            {gpsStatus === "found" && gpsStart && (
+              <Badge variant="outline" className="gap-1 border-success/40 text-success">
                 <MapPin className="h-3 w-3" />
-              </div>
+                GPS OK
+              </Badge>
+            )}
+            {(gpsStatus === "timeout" || gpsStatus === "denied" || gpsStatus === "unavailable") && (
+              <Badge variant="outline" className="gap-1 border-destructive/40 text-destructive">
+                <MapPinOff className="h-3 w-3" />
+                {gpsStatus === "timeout" ? "Timeout" : gpsStatus === "denied" ? "Refusé" : "Indispo"}
+              </Badge>
             )}
           </div>
         </div>
