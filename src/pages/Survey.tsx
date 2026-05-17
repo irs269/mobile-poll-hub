@@ -67,6 +67,8 @@ export default function SurveyPage() {
   const [gpsStart, setGpsStart] = useState<GpsCoords | null>(null);
   const [gpsEnd, setGpsEnd] = useState<GpsCoords | null>(null);
   const [gpsLoading, setGpsLoading] = useState(false);
+  const [gpsStatus, setGpsStatus] = useState<"idle" | "loading" | "found" | "timeout" | "denied" | "unavailable">("idle");
+  const [gpsError, setGpsError] = useState<string | null>(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [savedOffline, setSavedOffline] = useState(false);
 
