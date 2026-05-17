@@ -14,6 +14,7 @@ import {
   ArrowRight, 
   Check, 
   MapPin, 
+  MapPinOff,
   Loader2,
   WifiOff
 } from "lucide-react";
@@ -66,6 +67,8 @@ export default function SurveyPage() {
   const [gpsStart, setGpsStart] = useState<GpsCoords | null>(null);
   const [gpsEnd, setGpsEnd] = useState<GpsCoords | null>(null);
   const [gpsLoading, setGpsLoading] = useState(false);
+  const [gpsStatus, setGpsStatus] = useState<"idle" | "loading" | "found" | "timeout" | "denied" | "unavailable">("idle");
+  const [gpsError, setGpsError] = useState<string | null>(null);
   const [isOnline, setIsOnline] = useState(navigator.onLine);
   const [savedOffline, setSavedOffline] = useState(false);
 
@@ -171,10 +174,14 @@ export default function SurveyPage() {
   const captureGps = (type: "start" | "end"): Promise<GpsCoords | null> => {
     return new Promise((resolve) => {
       if (!navigator.geolocation) {
+        setGpsStatus("unavailable");
+        setGpsError("Géolocalisation non supportée sur cet appareil");
         resolve(null);
         return;
       }
       setGpsLoading(true);
+      setGpsStatus("loading");
+      setGpsError(null);
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const coords: GpsCoords = {
@@ -189,11 +196,22 @@ export default function SurveyPage() {
             setGpsEnd(coords);
           }
           setGpsLoading(false);
+          setGpsStatus("found");
           resolve(coords);
         },
         (err) => {
           console.error("GPS error:", err);
           setGpsLoading(false);
+          if (err.code === err.PERMISSION_DENIED) {
+            setGpsStatus("denied");
+            setGpsError("Permission de localisation refusée");
+          } else if (err.code === err.TIMEOUT) {
+            setGpsStatus("timeout");
+            setGpsError("Temps écoulé — signal GPS faible");
+          } else {
+            setGpsStatus("unavailable");
+            setGpsError("Position indisponible");
+          }
           resolve(null);
         },
         { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
@@ -372,10 +390,23 @@ export default function SurveyPage() {
                 Hors ligne
               </Badge>
             )}
-            {gpsStart && (
-              <div className="flex items-center gap-1 text-success text-xs">
+            {gpsStatus === "loading" && (
+              <Badge variant="outline" className="gap-1 border-primary/40 text-primary">
+                <Loader2 className="h-3 w-3 animate-spin" />
+                GPS…
+              </Badge>
+            )}
+            {gpsStatus === "found" && gpsStart && (
+              <Badge variant="outline" className="gap-1 border-success/40 text-success">
                 <MapPin className="h-3 w-3" />
-              </div>
+                GPS OK
+              </Badge>
+            )}
+            {(gpsStatus === "timeout" || gpsStatus === "denied" || gpsStatus === "unavailable") && (
+              <Badge variant="outline" className="gap-1 border-destructive/40 text-destructive">
+                <MapPinOff className="h-3 w-3" />
+                {gpsStatus === "timeout" ? "Timeout" : gpsStatus === "denied" ? "Refusé" : "Indispo"}
+              </Badge>
             )}
           </div>
         </div>
@@ -384,6 +415,65 @@ export default function SurveyPage() {
 
       {/* Question */}
       <main className="flex-1 container px-4 py-6 space-y-4">
+        {/* GPS status panel */}
+        <Card className={`border shadow-sm ${
+          gpsStatus === "found" ? "border-success/40 bg-success/5" :
+          gpsStatus === "loading" ? "border-primary/30 bg-primary/5" :
+          (gpsStatus === "timeout" || gpsStatus === "denied" || gpsStatus === "unavailable") ? "border-destructive/40 bg-destructive/5" :
+          "border-muted bg-muted/30"
+        }`}>
+          <CardContent className="py-3 px-4">
+            <div className="flex items-start gap-3">
+              <div className="mt-0.5">
+                {gpsStatus === "loading" ? (
+                  <Loader2 className="h-5 w-5 text-primary animate-spin" />
+                ) : gpsStatus === "found" ? (
+                  <MapPin className="h-5 w-5 text-success" />
+                ) : (gpsStatus === "timeout" || gpsStatus === "denied" || gpsStatus === "unavailable") ? (
+                  <MapPinOff className="h-5 w-5 text-destructive" />
+                ) : (
+                  <MapPin className="h-5 w-5 text-muted-foreground" />
+                )}
+              </div>
+              <div className="flex-1 min-w-0">
+                <div className="flex items-center justify-between gap-2 flex-wrap">
+                  <p className="text-sm font-semibold">
+                    {gpsStatus === "loading" && "Acquisition GPS en cours…"}
+                    {gpsStatus === "found" && "Position GPS enregistrée"}
+                    {gpsStatus === "timeout" && "Délai GPS dépassé"}
+                    {gpsStatus === "denied" && "Géolocalisation refusée"}
+                    {gpsStatus === "unavailable" && "GPS indisponible"}
+                    {gpsStatus === "idle" && "GPS en attente"}
+                  </p>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={() => captureGps(gpsEnd ? "end" : "start")}
+                    disabled={gpsLoading}
+                    className="h-7 text-xs"
+                  >
+                    {gpsLoading ? <Loader2 className="h-3 w-3 mr-1 animate-spin" /> : <MapPin className="h-3 w-3 mr-1" />}
+                    Réessayer
+                  </Button>
+                </div>
+                {gpsError && (
+                  <p className="text-xs text-destructive mt-1">{gpsError}</p>
+                )}
+                {gpsStart && (
+                  <p className="text-xs text-muted-foreground mt-1 font-mono">
+                    Début: {gpsStart.latitude.toFixed(6)}, {gpsStart.longitude.toFixed(6)} (±{Math.round(gpsStart.accuracy)}m)
+                  </p>
+                )}
+                {gpsEnd && (
+                  <p className="text-xs text-muted-foreground mt-0.5 font-mono">
+                    Fin: {gpsEnd.latitude.toFixed(6)}, {gpsEnd.longitude.toFixed(6)} (±{Math.round(gpsEnd.accuracy)}m)
+                  </p>
+                )}
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+
         {(() => {
           const sec = currentQuestion?.section_id ? sections.find((s) => s.id === currentQuestion.section_id) : null;
           if (!sec) return null;
