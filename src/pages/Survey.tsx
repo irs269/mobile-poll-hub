@@ -174,10 +174,14 @@ export default function SurveyPage() {
   const captureGps = (type: "start" | "end"): Promise<GpsCoords | null> => {
     return new Promise((resolve) => {
       if (!navigator.geolocation) {
+        setGpsStatus("unavailable");
+        setGpsError("Géolocalisation non supportée sur cet appareil");
         resolve(null);
         return;
       }
       setGpsLoading(true);
+      setGpsStatus("loading");
+      setGpsError(null);
       navigator.geolocation.getCurrentPosition(
         (position) => {
           const coords: GpsCoords = {
@@ -192,11 +196,22 @@ export default function SurveyPage() {
             setGpsEnd(coords);
           }
           setGpsLoading(false);
+          setGpsStatus("found");
           resolve(coords);
         },
         (err) => {
           console.error("GPS error:", err);
           setGpsLoading(false);
+          if (err.code === err.PERMISSION_DENIED) {
+            setGpsStatus("denied");
+            setGpsError("Permission de localisation refusée");
+          } else if (err.code === err.TIMEOUT) {
+            setGpsStatus("timeout");
+            setGpsError("Temps écoulé — signal GPS faible");
+          } else {
+            setGpsStatus("unavailable");
+            setGpsError("Position indisponible");
+          }
           resolve(null);
         },
         { enableHighAccuracy: true, timeout: 15000, maximumAge: 0 }
