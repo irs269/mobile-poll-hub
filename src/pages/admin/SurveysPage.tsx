@@ -14,7 +14,9 @@ import {
   Edit, 
   Trash2, 
   Eye,
-  Copy
+  Copy,
+  Globe,
+  Link as LinkIcon
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -40,6 +42,7 @@ interface Survey {
   title: string;
   description: string | null;
   is_active: boolean;
+  is_public?: boolean;
   created_at: string;
   question_count?: number;
 }
@@ -165,6 +168,32 @@ export default function SurveysPage() {
     } catch (error) {
       console.error("Error toggling survey:", error);
       toast.error("Erreur lors de la mise à jour");
+    }
+  };
+
+  const handleTogglePublic = async (survey: Survey) => {
+    try {
+      const newValue = !survey.is_public;
+      const { error } = await supabase
+        .from("surveys")
+        .update({ is_public: newValue } as never)
+        .eq("id", survey.id);
+      if (error) throw error;
+      setSurveys((prev) => prev.map((s) => (s.id === survey.id ? { ...s, is_public: newValue } : s)));
+      toast.success(newValue ? "Sondage ouvert au public" : "Accès public désactivé");
+    } catch (e) {
+      console.error(e);
+      toast.error("Erreur lors de la mise à jour");
+    }
+  };
+
+  const copyPublicLink = async (survey: Survey) => {
+    const url = `${window.location.origin}/s/${survey.id}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Lien public copié !");
+    } catch {
+      toast.error("Impossible de copier le lien");
     }
   };
 
