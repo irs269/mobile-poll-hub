@@ -1,8 +1,12 @@
-import { useEffect } from "react";
+import { useEffect, useState } from "react";
 import { useNavigate } from "react-router-dom";
+import { motion } from "framer-motion";
 import { useAuth } from "@/hooks/useAuth";
+import { supabase } from "@/integrations/supabase/client";
 import { Logo } from "@/components/Logo";
 import { Button } from "@/components/ui/button";
+import { Card, CardContent } from "@/components/ui/card";
+import { Badge } from "@/components/ui/badge";
 import { DemoSlides } from "@/components/DemoSlides";
 import { 
   Smartphone, 
@@ -10,7 +14,8 @@ import {
   Wifi, 
   BarChart3,
   ArrowRight,
-  CheckCircle2
+  CheckCircle2,
+  Globe,
 } from "lucide-react";
 
 export default function Index() {
