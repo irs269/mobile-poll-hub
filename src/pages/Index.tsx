@@ -21,12 +21,26 @@ import {
 export default function Index() {
   const navigate = useNavigate();
   const { user, loading } = useAuth();
+  const [publicSurveys, setPublicSurveys] = useState<{ id: string; title: string; description: string | null }[]>([]);
 
   useEffect(() => {
     if (!loading && user) {
       navigate("/dashboard");
     }
   }, [user, loading, navigate]);
+
+  useEffect(() => {
+    (async () => {
+      const { data } = await supabase
+        .from("surveys")
+        .select("id, title, description")
+        .eq("is_public", true)
+        .eq("is_active", true)
+        .order("created_at", { ascending: false })
+        .limit(6);
+      setPublicSurveys(data || []);
+    })();
+  }, []);
 
   const features = [
     {
