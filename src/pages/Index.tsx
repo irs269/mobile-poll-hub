@@ -93,38 +93,55 @@ export default function Index() {
         
         <div className="relative container px-4 py-20 lg:py-32">
           <div className="max-w-3xl mx-auto text-center">
-            <div className="flex justify-center mb-8 animate-fade-in">
+            <motion.div
+              initial={{ opacity: 0, y: -20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.6 }}
+              className="flex justify-center mb-8"
+            >
               <Logo size="xl" variant="full" className="[&_span]:text-primary-foreground" />
-            </div>
-            
-            <h1 className="text-3xl lg:text-5xl font-extrabold text-primary-foreground mb-6 animate-slide-up">
+            </motion.div>
+
+            <motion.h1
+              initial={{ opacity: 0, y: 30 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.1 }}
+              className="text-3xl lg:text-5xl font-extrabold text-primary-foreground mb-6"
+            >
               Collecte de données terrain simplifiée
-            </h1>
-            
-            <p className="text-lg lg:text-xl text-primary-foreground/80 mb-10 animate-slide-up" style={{ animationDelay: "0.1s" }}>
-              Créez des sondages, assignez-les à vos enquêteurs et collectez des réponses géolocalisées, même hors-ligne.
-            </p>
-            
-            <div className="flex flex-col sm:flex-row items-center justify-center gap-4 animate-slide-up" style={{ animationDelay: "0.2s" }}>
-              <Button
-                variant="hero"
-                size="xl"
-                onClick={() => navigate("/auth")}
-              >
+            </motion.h1>
+
+            <motion.p
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.25 }}
+              className="text-lg lg:text-xl text-primary-foreground/80 mb-10"
+            >
+              Créez des sondages, assignez-les à vos enquêteurs ou ouvrez-les au public — et collectez des réponses géolocalisées, même hors-ligne.
+            </motion.p>
+
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.7, delay: 0.4 }}
+              className="flex flex-col sm:flex-row items-center justify-center gap-4"
+            >
+              <Button variant="hero" size="xl" onClick={() => navigate("/auth")}>
                 Commencer maintenant
                 <ArrowRight className="h-5 w-5 ml-2" />
               </Button>
-              <Button
-                variant="outline-light"
-                size="xl"
-                onClick={() => navigate("/auth")}
-              >
+              <Button variant="outline-light" size="xl" onClick={() => navigate("/auth")}>
                 Se connecter
               </Button>
-            </div>
+            </motion.div>
 
             {/* Play Store Badge */}
-            <div className="mt-10 flex flex-col items-center gap-3 animate-slide-up" style={{ animationDelay: "0.3s" }}>
+            <motion.div
+              initial={{ opacity: 0, scale: 0.95 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.6, delay: 0.55 }}
+              className="mt-10 flex flex-col items-center gap-3"
+            >
               <p className="text-sm text-primary-foreground/80 font-medium">
                 Application mobile disponible sur
               </p>
@@ -146,16 +163,13 @@ export default function Index() {
                   <span className="text-lg font-semibold text-white">Google Play</span>
                 </div>
               </a>
-              <p className="text-xs text-primary-foreground/70 max-w-md text-center mt-2">
-                Bientôt disponible — solution complète pour vos campagnes d'enquêtes terrain.
-              </p>
-            </div>
+            </motion.div>
           </div>
         </div>
 
         {/* Wave decoration */}
-        <div className="absolute bottom-0 left-0 right-0">
-          <svg viewBox="0 0 1440 120" fill="none" xmlns="http://www.w3.org/2000/svg">
+        <div className="absolute bottom-0 left-0 right-0 leading-[0]">
+          <svg viewBox="0 0 1440 120" fill="none" preserveAspectRatio="none" xmlns="http://www.w3.org/2000/svg" className="block w-full h-[80px] lg:h-[120px]">
             <path
               d="M0 120L60 110C120 100 240 80 360 70C480 60 600 60 720 65C840 70 960 80 1080 85C1200 90 1320 90 1380 90L1440 90V120H1380C1320 120 1200 120 1080 120C960 120 840 120 720 120C600 120 480 120 360 120C240 120 120 120 60 120H0Z"
               fill="hsl(var(--background))"
@@ -163,6 +177,73 @@ export default function Index() {
           </svg>
         </div>
       </header>
+
+      {/* Public Surveys Section */}
+      <section className="py-20 lg:py-28 bg-gradient-to-b from-background to-primary/5">
+        <div className="container px-4">
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: "-80px" }}
+            transition={{ duration: 0.6 }}
+            className="text-center mb-12 max-w-2xl mx-auto"
+          >
+            <Badge variant="outline" className="border-primary/40 text-primary gap-1 mb-4">
+              <Globe className="h-3 w-3" /> Sans compte
+            </Badge>
+            <h2 className="text-2xl lg:text-4xl font-bold mb-4">
+              Répondez aux enquêtes publiques en ligne
+            </h2>
+            <p className="text-lg text-muted-foreground">
+              Aucune inscription requise. Les administrateurs peuvent ouvrir un sondage au grand public en un clic.
+            </p>
+          </motion.div>
+
+          {publicSurveys.length === 0 ? (
+            <div className="max-w-xl mx-auto">
+              <Card className="border-dashed border-2 border-primary/20 bg-card/50">
+                <CardContent className="p-8 text-center">
+                  <Globe className="h-10 w-10 text-primary/60 mx-auto mb-3" />
+                  <p className="text-muted-foreground">
+                    Aucune enquête publique pour le moment. Revenez bientôt !
+                  </p>
+                </CardContent>
+              </Card>
+            </div>
+          ) : (
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+              {publicSurveys.map((s, i) => (
+                <motion.div
+                  key={s.id}
+                  initial={{ opacity: 0, y: 24 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: "-50px" }}
+                  transition={{ duration: 0.5, delay: i * 0.08 }}
+                >
+                  <Card className="h-full border-primary/10 hover:border-primary/40 hover:shadow-xl transition-all group">
+                    <CardContent className="p-6 flex flex-col h-full">
+                      <Badge variant="secondary" className="self-start mb-3 gap-1">
+                        <Globe className="h-3 w-3" /> Publique
+                      </Badge>
+                      <h3 className="font-semibold text-lg mb-2 line-clamp-2">{s.title}</h3>
+                      <p className="text-sm text-muted-foreground line-clamp-3 mb-4 flex-1">
+                        {s.description || "Participez à cette enquête sans inscription."}
+                      </p>
+                      <Button
+                        variant="outline"
+                        className="w-full group-hover:bg-primary group-hover:text-primary-foreground transition-colors"
+                        onClick={() => navigate(`/s/${s.id}`)}
+                      >
+                        Répondre <ArrowRight className="h-4 w-4 ml-2" />
+                      </Button>
+                    </CardContent>
+                  </Card>
+                </motion.div>
+              ))}
+            </div>
+          )}
+        </div>
+      </section>
 
       {/* Features Section */}
       <section className="py-20 lg:py-32">
