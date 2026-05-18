@@ -289,6 +289,16 @@ export default function SurveysPage() {
                         <Eye className="h-4 w-4 mr-2" />
                         Prévisualiser
                       </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleTogglePublic(survey)}>
+                        <Globe className="h-4 w-4 mr-2" />
+                        {survey.is_public ? "Rendre privé" : "Ouvrir au public"}
+                      </DropdownMenuItem>
+                      {survey.is_public && (
+                        <DropdownMenuItem onClick={() => copyPublicLink(survey)}>
+                          <LinkIcon className="h-4 w-4 mr-2" />
+                          Copier le lien public
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuItem
                         className="text-destructive"
                         onClick={() => {
@@ -309,6 +319,11 @@ export default function SurveysPage() {
                     <Badge variant={survey.is_active ? "default" : "secondary"}>
                       {survey.is_active ? "Actif" : "Inactif"}
                     </Badge>
+                    {survey.is_public && (
+                      <Badge variant="outline" className="border-primary/40 text-primary gap-1">
+                        <Globe className="h-3 w-3" /> Public
+                      </Badge>
+                    )}
                     <span className="text-sm text-muted-foreground">
                       {survey.question_count} question{survey.question_count !== 1 ? "s" : ""}
                     </span>
