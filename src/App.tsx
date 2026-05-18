@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
 import Survey from "./pages/Survey";
+import PublicSurvey from "./pages/PublicSurvey";
 import NotFound from "./pages/NotFound";
 
 // Admin Pages
@@ -35,6 +36,7 @@ const App = () => (
             {/* Public Routes */}
             <Route path="/" element={<Index />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/s/:surveyId" element={<PublicSurvey />} />
             
             {/* Surveyor Routes */}
             <Route path="/dashboard" element={<Dashboard />} />
