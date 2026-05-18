@@ -14,7 +14,9 @@ import {
   Edit, 
   Trash2, 
   Eye,
-  Copy
+  Copy,
+  Globe,
+  Link as LinkIcon
 } from "lucide-react";
 import {
   DropdownMenu,
@@ -40,6 +42,7 @@ interface Survey {
   title: string;
   description: string | null;
   is_active: boolean;
+  is_public?: boolean;
   created_at: string;
   question_count?: number;
 }
@@ -168,6 +171,32 @@ export default function SurveysPage() {
     }
   };
 
+  const handleTogglePublic = async (survey: Survey) => {
+    try {
+      const newValue = !survey.is_public;
+      const { error } = await supabase
+        .from("surveys")
+        .update({ is_public: newValue } as never)
+        .eq("id", survey.id);
+      if (error) throw error;
+      setSurveys((prev) => prev.map((s) => (s.id === survey.id ? { ...s, is_public: newValue } : s)));
+      toast.success(newValue ? "Sondage ouvert au public" : "Accès public désactivé");
+    } catch (e) {
+      console.error(e);
+      toast.error("Erreur lors de la mise à jour");
+    }
+  };
+
+  const copyPublicLink = async (survey: Survey) => {
+    const url = `${window.location.origin}/s/${survey.id}`;
+    try {
+      await navigator.clipboard.writeText(url);
+      toast.success("Lien public copié !");
+    } catch {
+      toast.error("Impossible de copier le lien");
+    }
+  };
+
   const filteredSurveys = surveys.filter(
     (s) =>
       s.title.toLowerCase().includes(searchQuery.toLowerCase()) ||
@@ -260,6 +289,16 @@ export default function SurveysPage() {
                         <Eye className="h-4 w-4 mr-2" />
                         Prévisualiser
                       </DropdownMenuItem>
+                      <DropdownMenuItem onClick={() => handleTogglePublic(survey)}>
+                        <Globe className="h-4 w-4 mr-2" />
+                        {survey.is_public ? "Rendre privé" : "Ouvrir au public"}
+                      </DropdownMenuItem>
+                      {survey.is_public && (
+                        <DropdownMenuItem onClick={() => copyPublicLink(survey)}>
+                          <LinkIcon className="h-4 w-4 mr-2" />
+                          Copier le lien public
+                        </DropdownMenuItem>
+                      )}
                       <DropdownMenuItem
                         className="text-destructive"
                         onClick={() => {
@@ -280,6 +319,11 @@ export default function SurveysPage() {
                     <Badge variant={survey.is_active ? "default" : "secondary"}>
                       {survey.is_active ? "Actif" : "Inactif"}
                     </Badge>
+                    {survey.is_public && (
+                      <Badge variant="outline" className="border-primary/40 text-primary gap-1">
+                        <Globe className="h-3 w-3" /> Public
+                      </Badge>
+                    )}
                     <span className="text-sm text-muted-foreground">
                       {survey.question_count} question{survey.question_count !== 1 ? "s" : ""}
                     </span>
