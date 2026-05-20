@@ -51,6 +51,7 @@ const App = () => (
               <Route path="surveys/:surveyId/preview" element={<SurveyPreview />} />
               <Route path="surveyors" element={<SurveyorsPage />} />
               <Route path="responses" element={<ResponsesPage />} />
+              <Route path="public-responses" element={<PublicResponsesPage />} />
               <Route path="reporting" element={<ReportingPage />} />
             </Route>
             
