@@ -21,6 +21,7 @@ import SurveyEditor from "./pages/admin/SurveyEditor";
 import SurveyPreview from "./pages/admin/SurveyPreview";
 import SurveyorsPage from "./pages/admin/SurveyorsPage";
 import ResponsesPage from "./pages/admin/ResponsesPage";
+import PublicResponsesPage from "./pages/admin/PublicResponsesPage";
 import ReportingPage from "./pages/admin/ReportingPage";
 
 const queryClient = new QueryClient();
@@ -50,6 +51,7 @@ const App = () => (
               <Route path="surveys/:surveyId/preview" element={<SurveyPreview />} />
               <Route path="surveyors" element={<SurveyorsPage />} />
               <Route path="responses" element={<ResponsesPage />} />
+              <Route path="public-responses" element={<PublicResponsesPage />} />
               <Route path="reporting" element={<ReportingPage />} />
             </Route>
             
