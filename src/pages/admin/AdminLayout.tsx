@@ -53,6 +53,7 @@ export default function AdminLayout() {
     { to: "/admin/surveys", icon: ClipboardList, label: "Sondages" },
     { to: "/admin/surveyors", icon: Users, label: "Enquêteurs" },
     { to: "/admin/responses", icon: FileBarChart, label: "Réponses" },
+    { to: "/admin/public-responses", icon: Globe, label: "Public" },
     { to: "/admin/reporting", icon: PieChart, label: "Reporting" },
   ];
 
